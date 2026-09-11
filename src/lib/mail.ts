@@ -7,9 +7,10 @@ interface SendOtpResult {
 }
 
 export async function sendAdminOtpEmail(targetEmail: string, otp: string): Promise<SendOtpResult> {
-  const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || process.env.GMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.env.GMAIL_PASS;
-  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
+  const rawPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.env.GMAIL_PASS || '';
+  const emailPass = rawPass.trim().replace(/\s+/g, '');
+  const smtpHost = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
   const smtpPort = Number(process.env.SMTP_PORT) || 465;
 
   const htmlContent = `
@@ -96,7 +97,7 @@ export async function sendAdminOtpEmail(targetEmail: string, otp: string): Promi
   }
 
   try {
-    const isGmail = smtpHost.includes('gmail');
+    const isGmail = smtpHost.toLowerCase().includes('gmail') || emailUser.toLowerCase().endsWith('@gmail.com');
     const transporter = nodemailer.createTransport(
       isGmail
         ? {
@@ -117,7 +118,7 @@ export async function sendAdminOtpEmail(targetEmail: string, otp: string): Promi
           }
     );
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"Diecast Hub Security" <${emailUser}>`,
       to: targetEmail,
       subject: `[Diecast Hub] Admin Verification Code: ${otp}`,
@@ -125,6 +126,7 @@ export async function sendAdminOtpEmail(targetEmail: string, otp: string): Promi
       html: htmlContent,
     });
 
+    console.log(`[Admin Mail] Security PIN successfully sent to ${targetEmail} (ID: ${info.messageId})`);
     return { success: true, simulated: false };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown mail transport error';

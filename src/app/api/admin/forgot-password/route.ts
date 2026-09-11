@@ -32,16 +32,21 @@ export async function POST(req: NextRequest) {
 
     // 2. Strict Recipient & Target Verification
     // Prevents attackers from supplying an arbitrary email to intercept admin reset codes
+    const adminEmail = (process.env.ADMIN_EMAIL || process.env.EMAIL_USER || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    const adminUsername = (process.env.ADMIN_USERNAME || DEFAULT_ADMIN_USERNAME).trim().toLowerCase();
+
     const isAuthorizedTarget =
       !requested ||
-      requested === DEFAULT_ADMIN_EMAIL.toLowerCase() ||
-      requested === DEFAULT_ADMIN_USERNAME.toLowerCase();
+      requested === adminEmail ||
+      requested === adminUsername ||
+      requested === 'diecasthubmanjeri@gmail.com' ||
+      requested === 'diecasthubmanjeri';
 
     if (!isAuthorizedTarget) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Security alert: Verification codes can only be dispatched to the registered store owner email.',
+          error: `Security alert: Verification codes can only be dispatched to the registered store owner email (${DEFAULT_ADMIN_EMAIL}).`,
         },
         { status: 403 }
       );
@@ -66,6 +71,16 @@ export async function POST(req: NextRequest) {
 
     // 5. Dispatch email via nodemailer / SMTP
     const mailResult = await sendAdminOtpEmail(DEFAULT_ADMIN_EMAIL, otp);
+
+    if (!mailResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: mailResult.error || 'Failed to dispatch security code to email. Please check server logs.',
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

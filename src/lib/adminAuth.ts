@@ -6,9 +6,9 @@ import { getFallbackAdmin, saveFallbackAdmin } from '@/lib/fallbackStorage';
 
 export const ADMIN_COOKIE_NAME = 'diecast_admin_session';
 
-export const DEFAULT_ADMIN_USERNAME = 'diecasthubmanjeri';
-export const DEFAULT_ADMIN_EMAIL = 'diecasthubmanjeri@gmail.com';
-export const DEFAULT_ADMIN_PASSWORD = 'diecast123';
+export const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'diecasthubmanjeri';
+export const DEFAULT_ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || 'diecasthubmanjeri@gmail.com';
+export const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_INITIAL_PASSWORD || 'diecast123';
 
 const ADMIN_SECRET =
   process.env.ADMIN_SECRET ||
