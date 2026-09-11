@@ -10,10 +10,16 @@ export const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'diecasthubm
 export const DEFAULT_ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || 'diecasthubmanjeri@gmail.com';
 export const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_INITIAL_PASSWORD || 'diecast123';
 
-const ADMIN_SECRET =
-  process.env.ADMIN_SECRET ||
-  process.env.NEXTAUTH_SECRET ||
-  'diecasthub_admin_super_secure_key_2026_x89f_manjeri';
+export function getAdminSecret(): string {
+  return (
+    process.env.ADMIN_SECRET ||
+    process.env.ADMIN_SECRET_KEY ||
+    process.env.NEXTAUTH_SECRET ||
+    'diecasthub_admin_super_secure_key_2026_x89f_manjeri'
+  );
+}
+
+const ADMIN_SECRET = getAdminSecret();
 
 // In-memory rate limiting map for login attempts: ip -> { attempts, lockedUntil }
 const loginAttempts = new Map<string, { attempts: number; lockedUntil: number }>();
@@ -76,8 +82,8 @@ export function generateSalt(): string {
 }
 
 // Cryptographic HMAC-SHA256 hash for OTP pins
-export function hashOtp(otp: string): string {
-  return crypto.createHmac('sha256', ADMIN_SECRET).update(otp.trim()).digest('hex');
+export function hashOtp(otp: string, secret: string = getAdminSecret()): string {
+  return crypto.createHmac('sha256', secret).update(otp.trim()).digest('hex');
 }
 
 export interface AdminRecordData {
@@ -102,9 +108,25 @@ export async function getOrInitAdminRecord(): Promise<AdminRecordData> {
       }
 
       if (admin) {
+        let needsSave = false;
+        if (!admin.salt || !admin.passwordHash) {
+          const salt = generateSalt();
+          const passwordHash = hashPassword(DEFAULT_ADMIN_PASSWORD, salt);
+          admin.salt = salt;
+          admin.passwordHash = passwordHash;
+          needsSave = true;
+        }
+        if (!admin.email) {
+          admin.email = DEFAULT_ADMIN_EMAIL;
+          needsSave = true;
+        }
+        if (needsSave) {
+          await admin.save();
+        }
+
         return {
           username: admin.username,
-          email: admin.email,
+          email: admin.email || DEFAULT_ADMIN_EMAIL,
           passwordHash: admin.passwordHash,
           salt: admin.salt,
           passwordVersion: admin.passwordVersion || 1,
@@ -246,6 +268,8 @@ export async function generateAndSaveAdminOtp(): Promise<{ otp: string; expiresA
   const db = await connectDB();
   if (db) {
     try {
+      const defaultSalt = generateSalt();
+      const defaultHash = hashPassword(DEFAULT_ADMIN_PASSWORD, defaultSalt);
       await AdminModel.findOneAndUpdate(
         { username: DEFAULT_ADMIN_USERNAME },
         {
@@ -255,8 +279,14 @@ export async function generateAndSaveAdminOtp(): Promise<{ otp: string; expiresA
             otpAttempts: 0,
             otpLastSentAt: now,
           },
+          $setOnInsert: {
+            email: DEFAULT_ADMIN_EMAIL,
+            salt: defaultSalt,
+            passwordHash: defaultHash,
+            passwordVersion: 1,
+          },
         },
-        { upsert: true }
+        { upsert: true, new: true }
       );
     } catch (err) {
       console.error('[Admin DB save OTP error]:', err);
@@ -317,7 +347,8 @@ export async function verifyAndResetPassword(
   enteredOtp: string,
   newPassword: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!enteredOtp || typeof enteredOtp !== 'string' || enteredOtp.trim().length !== 6) {
+  const cleanOtp = enteredOtp ? String(enteredOtp).trim() : '';
+  if (!cleanOtp || !/^\d{6}$/.test(cleanOtp)) {
     return { success: false, error: 'Please enter a valid 6-digit security PIN.' };
   }
 
@@ -342,12 +373,30 @@ export async function verifyAndResetPassword(
     return { success: false, error: 'Too many incorrect attempts. PIN invalidated for your protection.' };
   }
 
-  // Constant-time OTP comparison
-  const enteredHash = hashOtp(enteredOtp);
-  const enteredBuf = Buffer.from(enteredHash, 'hex');
+  // Constant-time OTP comparison with support for secret consistency
+  const candidateSecrets = Array.from(
+    new Set(
+      [
+        getAdminSecret(),
+        process.env.ADMIN_SECRET,
+        process.env.ADMIN_SECRET_KEY,
+        process.env.NEXTAUTH_SECRET,
+        'diecasthub_admin_super_secure_key_2026_x89f_manjeri',
+      ].filter(Boolean)
+    )
+  ) as string[];
+
+  let matches = false;
   const storedBuf = Buffer.from(admin.otpHash, 'hex');
 
-  const matches = enteredBuf.length === storedBuf.length && crypto.timingSafeEqual(enteredBuf, storedBuf);
+  for (const sec of candidateSecrets) {
+    const candidateHash = crypto.createHmac('sha256', sec).update(cleanOtp).digest('hex');
+    const enteredBuf = Buffer.from(candidateHash, 'hex');
+    if (enteredBuf.length === storedBuf.length && crypto.timingSafeEqual(enteredBuf, storedBuf)) {
+      matches = true;
+      break;
+    }
+  }
 
   if (!matches) {
     await incrementAdminOtpAttempts(currentAttempts);
@@ -374,6 +423,7 @@ export async function verifyAndResetPassword(
         { username: DEFAULT_ADMIN_USERNAME },
         {
           $set: {
+            email: DEFAULT_ADMIN_EMAIL,
             passwordHash: newPasswordHash,
             salt: newSalt,
             passwordVersion: newPasswordVersion,

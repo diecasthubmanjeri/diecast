@@ -587,7 +587,10 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 type="text"
                 maxLength={6}
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => {
+                  setOtp(e.target.value.replace(/\D/g, ''));
+                  if (error) setError('');
+                }}
                 placeholder="123456"
                 autoFocus
                 required
@@ -627,7 +630,15 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 <input
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (error) setError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword)) {
+                      e.preventDefault();
+                    }
+                  }}
                   placeholder="At least 6 characters"
                   required
                   style={{
@@ -693,7 +704,15 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 <input
                   type={showNewPassword ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (error) setError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword)) {
+                      e.preventDefault();
+                    }
+                  }}
                   placeholder="Repeat new password"
                   required
                   style={{
@@ -719,22 +738,31 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   }}
                 />
               </div>
+              {confirmPassword.length > 0 && (
+                <div style={{ marginTop: '6px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {newPassword === confirmPassword ? (
+                    <span style={{ color: '#4ade80', fontWeight: 600 }}>✓ Passwords match</span>
+                  ) : (
+                    <span style={{ color: '#f87171', fontWeight: 600 }}>✗ Passwords do not match</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Submit Reset */}
             <button
               type="submit"
-              disabled={loading || otp.trim().length !== 6 || newPassword.length < 6}
+              disabled={loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword}
               style={{
                 width: '100%',
                 padding: '13px 18px',
-                backgroundColor: '#16a34a',
+                backgroundColor: loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword ? '#334155' : '#16a34a',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
                 transition: 'background-color 0.2s',
                 marginTop: '6px',
