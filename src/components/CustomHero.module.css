@@ -1,0 +1,283 @@
+.heroSection {
+  position: relative;
+  width: 100%;
+  min-height: 70vh;
+  display: flex;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  margin-bottom: 2rem;
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 4rem 2rem 2rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leftContent {
+  flex: 1;
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+}
+
+.rightContent {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.heroImage {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  filter: brightness(1.06) contrast(1.02);
+}
+
+/* Typography and Logo */
+.textContent {
+  max-width: 600px;
+  margin-top: 2rem;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 4.5rem;
+  font-style: italic;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 2.5rem;
+  text-transform: uppercase;
+}
+
+.logoDiecast {
+  color: #1a1a1a;
+  text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+.logoHubWrapper {
+  background-color: #0066CC;
+  border-radius: 12px;
+  padding: 0 1rem;
+  margin-left: -0.5rem;
+  margin-top: 2rem;
+  transform: rotate(-3deg);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoHub {
+  color: #ffffff;
+  font-size: 3rem;
+  transform: skewX(-5deg);
+  display: inline-block;
+  text-shadow: none;
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+  letter-spacing: -1px;
+}
+
+.textBlue {
+  color: #0066CC;
+}
+
+.heroSubtitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  line-height: 1.4;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+
+.titleDivider {
+  width: 40px;
+  height: 4px;
+  background-color: #0066CC;
+  margin-bottom: 2rem;
+}
+
+/* Bottom section with icons and corner text */
+.bottomSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: auto;
+  padding-top: 4rem;
+  width: 100%;
+}
+
+.featuresContainer {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(245, 245, 245, 0.9);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.featureItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.5px;
+}
+
+.featureItem svg {
+  color: #1a1a1a;
+  stroke-width: 1.2;
+}
+
+.featureDivider {
+  width: 1px;
+  height: 40px;
+  background-color: #d1d5db;
+}
+
+/* Bottom right text */
+.bottomRightText {
+  display: block;
+  text-align: right;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1.2;
+  position: relative;
+  background: rgba(245, 245, 245, 0.85);
+  padding: 1rem;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  color: #000;
+}
+
+.accentBars {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.accentBarWhite {
+  width: 24px;
+  height: 6px;
+  background-color: #ffffff;
+  transform: skewX(-30deg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.accentBarBlue {
+  width: 48px;
+  height: 6px;
+  background-color: #0066CC;
+  transform: skewX(-30deg);
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .logoContainer {
+    font-size: 3.5rem;
+  }
+  
+  .logoHub {
+    font-size: 2.25rem;
+  }
+  
+  .heroTitle {
+    font-size: 2.75rem;
+  }
+  
+  .featuresContainer {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroSection {
+    min-height: 60vh;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)),
+      url('/Gemini_Generated_Image_d8d1oxd8d1oxd8d1.png');
+    background-size: cover;
+    background-position: center center;
+  }
+
+  .contentWrapper {
+    flex-direction: column;
+    padding: 2rem 1rem;
+    align-items: center;
+  }
+
+  .leftContent {
+    max-width: 100%;
+    z-index: 2;
+  }
+
+  .rightContent {
+    display: none;
+  }
+  
+  .logoContainer {
+    font-size: 2.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  
+  .logoHubWrapper {
+    margin-top: 0.5rem;
+    margin-left: 0;
+  }
+  
+  .heroTitle {
+    font-size: 2.25rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.25rem;
+  }
+  
+  .bottomSection {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroSection {
+    min-height: auto;
+  }
+  
+  .logoContainer {
+    font-size: 2.25rem;
+  }
+  
+  .heroTitle {
+    font-size: 1.75rem;
+  }
+}

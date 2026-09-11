@@ -1,0 +1,157 @@
+.bannerContainer {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(to right, #f8f9fa, #eef2f6, #f8f9fa);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-xl) 0;
+}
+
+.slidesWrapper {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  width: 100%;
+}
+
+.slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.slideContent {
+  width: 100%;
+  max-width: 1440px;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.textLeft {
+  flex: 1;
+}
+
+.italicTitle {
+  font-size: clamp(20px, 2.5vw, 36px);
+  font-weight: 500;
+  font-style: italic;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+.mainTitle {
+  font-size: clamp(24px, 3.5vw, 48px);
+  font-weight: 800;
+  color: #0C44C2; /* Deep blue matching screenshot */
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.subTitle {
+  font-size: clamp(14px, 1.5vw, 20px);
+  color: #555;
+  font-weight: 500;
+}
+
+.textRight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-left: var(--spacing-2xl);
+}
+
+.promoGraphic {
+  background-color: #ff3b3b;
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-10deg);
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 10px 20px rgba(255, 59, 59, 0.3);
+}
+
+.promoEmoji {
+  font-size: 40px;
+}
+
+.noCoupon {
+  font-size: clamp(14px, 1.5vw, 20px);
+  font-weight: 500;
+  color: #333;
+}
+
+.dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ccc;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.activeDot {
+  background-color: #0C44C2;
+}
+
+@media (max-width: 768px) {
+  .bannerContainer {
+    padding: var(--spacing-md) 0 24px 0; /* extra bottom padding for dots */
+  }
+
+  .slideContent {
+    flex-direction: column;
+    text-align: center;
+    padding: 0 var(--spacing-md);
+  }
+  
+  .italicTitle {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .mainTitle {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .subTitle {
+    font-size: 12px;
+  }
+
+  .textRight {
+    padding-left: 0;
+    margin-top: var(--spacing-md);
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+  
+  .promoGraphic {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+  }
+  
+  .promoEmoji {
+    font-size: 20px;
+  }
+
+  .noCoupon {
+    font-size: 12px;
+  }
+}

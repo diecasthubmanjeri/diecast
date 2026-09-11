@@ -1,0 +1,96 @@
+.section {
+  padding: var(--spacing-2xl) 0;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--spacing-xl);
+  padding: 0 var(--spacing-lg);
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.titleWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  color: var(--color-dark-navy);
+  margin-bottom: var(--spacing-xs);
+}
+
+.subtitle {
+  color: var(--color-secondary-text);
+  font-size: 16px;
+  margin-bottom: 0;
+}
+
+.controls {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.controlBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  color: var(--color-dark-navy);
+  background-color: var(--color-white);
+  transition: all var(--transition-default);
+}
+
+.controlBtn:hover {
+  border-color: var(--color-primary-light-blue);
+  color: var(--color-primary-light-blue);
+  background-color: var(--color-very-light-blue);
+}
+
+.viewport {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  padding: 0 var(--spacing-lg);
+}
+
+.viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.container {
+  display: flex;
+  gap: var(--spacing-md);
+  width: max-content;
+  padding-bottom: var(--spacing-lg); /* Space for hover shadows */
+}
+
+.container > * {
+  width: 280px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: var(--spacing-xl) 0;
+  }
+  
+  .controls {
+    display: none; /* Hide buttons on mobile where touch swipe is natural */
+  }
+  
+  .container > * {
+    width: 240px;
+  }
+}

@@ -1,0 +1,316 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: transform var(--transition-default), box-shadow var(--transition-default);
+  height: 100%;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(23, 33, 43, 0.08);
+}
+
+.imageWrapper {
+  position: relative;
+  aspect-ratio: 4/3;
+  display: block;
+  overflow: hidden;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.imageContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: var(--color-white);
+}
+
+.productImg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover .productImg {
+  transform: scale(1.05);
+}
+
+.placeholderImg {
+  width: 48px;
+  height: 48px;
+}
+
+.badgeNew, .badgeBestseller, .badgeDiscount, .badgeComingSoon {
+  position: absolute;
+  top: var(--spacing-sm);
+  z-index: 10;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--border-radius-sm);
+  text-transform: uppercase;
+}
+
+.badgeNew {
+  left: var(--spacing-sm);
+  background-color: var(--color-primary-light-blue);
+  color: var(--color-white);
+}
+
+.badgeBestseller {
+  left: var(--spacing-sm);
+  background-color: var(--color-dark-navy);
+  color: var(--color-white);
+}
+
+.badgeComingSoon {
+  left: var(--spacing-sm);
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: var(--color-white);
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(194, 65, 12, 0.35);
+}
+
+.releaseDatePill {
+  font-size: 11px;
+  font-weight: 600;
+  color: #c2410c;
+  background-color: #ffedd5;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.badgeNew + .badgeBestseller {
+  top: calc(var(--spacing-sm) * 2 + 24px);
+}
+
+.badgeDiscount {
+  right: var(--spacing-sm);
+  background-color: #e74c3c;
+  color: var(--color-white);
+}
+
+.content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+  font-size: 12px;
+  color: var(--color-secondary-text);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.brand {
+  color: var(--color-deep-blue);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-dark-navy);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  margin-bottom: auto;
+  color: var(--color-dark-navy);
+  font-weight: 500;
+}
+
+.star {
+  color: #f39c12;
+}
+
+.reviews {
+  color: var(--color-secondary-text);
+  font-weight: 400;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.priceContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-dark-navy);
+}
+
+.originalPrice {
+  font-size: 13px;
+  color: var(--color-secondary-text);
+  text-decoration: line-through;
+}
+
+.actionRow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.btnBuyNow {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-dark-navy);
+  color: var(--color-white);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: background-color var(--transition-default);
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+
+.btnBuyNow:not(:disabled):hover {
+  background-color: #000;
+}
+
+.btnPreorder {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: var(--color-white);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: all var(--transition-default);
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(194, 65, 12, 0.25);
+}
+
+.btnPreorder:not(:disabled):hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(194, 65, 12, 0.35);
+}
+
+.addToCart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  background-color: var(--color-primary-light-blue);
+  color: var(--color-white);
+  transition: all var(--transition-default);
+  cursor: pointer;
+  border: none;
+}
+
+.addToCart:not(:disabled):hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.btnBuyNow:disabled, .addToCart:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--color-secondary-text);
+  color: var(--color-white);
+  transform: none;
+}
+
+.addToCartIcon {
+  display: none;
+}
+
+.addToCartText {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 10px;
+  }
+  .title {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .priceRow {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+  .price {
+    font-size: 16px;
+  }
+  .actionRow {
+    align-items: stretch;
+  }
+  .addToCart {
+    flex: 0 0 42px;
+    width: 42px;
+    height: auto;
+    padding: 0;
+  }
+  .btnBuyNow, .btnPreorder {
+    padding: 8px 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .addToCartText {
+    display: none;
+  }
+  .addToCartIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

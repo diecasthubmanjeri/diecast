@@ -1,0 +1,93 @@
+.announcementBar {
+  background-color: #e53935; /* Eye-catching red */
+  color: #ffffff;
+  padding: 12px 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  contain: paint;
+  user-select: none;
+  -webkit-user-select: none;
+  width: 100%;
+}
+
+.scrollingText {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  contain: layout paint;
+}
+
+.scrollingTrack {
+  display: flex;
+  width: max-content;
+  flex-shrink: 0;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  animation: scrollText var(--scroll-duration, 35s) linear infinite;
+}
+
+/* Pause animation on hover */
+.announcementBar:hover .scrollingTrack {
+  animation-play-state: paused;
+}
+
+.trackGroup {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.messageItem {
+  display: flex;
+  align-items: center;
+  padding-right: 70px; /* Consistent gap between messages */
+  flex-shrink: 0;
+}
+
+.message {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@keyframes scrollText {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (max-width: 768px) {
+  .announcementBar {
+    padding: 10px 0;
+  }
+
+  .messageItem {
+    padding-right: 40px;
+  }
+
+  .message {
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollingTrack {
+    animation: none;
+    transform: none;
+  }
+}
