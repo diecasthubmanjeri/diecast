@@ -46,7 +46,9 @@ export default function ProductCard({ product, hideActions }: ProductCardProps) 
       scale: product.scale,
       price: effectivePrice,
       quantity: 1,
-      image: product.image
+      image: product.image,
+      stock: product.stock,
+      isPreorder: isPreorder,
     });
     toast.success(isPreorder ? 'Added pre-order to cart!' : 'Added to cart!');
   };

@@ -8,6 +8,7 @@ import { seedInitialDataIfNeeded } from '@/lib/seed';
 import { getFallbackProducts, saveFallbackProduct } from '@/lib/fallbackStorage';
 import { getCached, setCached, clearCache } from '@/lib/cache';
 import { checkAdminAuth } from '@/lib/adminAuth';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -173,6 +174,8 @@ export async function POST(req: NextRequest) {
         preorderAmount: body.preorderAmount || 0,
         colors: Array.isArray(body.colors) ? body.colors : [],
         colorImages: Array.isArray(body.colorImages) ? body.colorImages : [],
+        material: body.material !== undefined ? String(body.material).trim() : 'Diecast Metal with Plastic Parts',
+        description: body.description !== undefined ? String(body.description).trim() : '',
       },
       { upsert: true, new: true, runValidators: true }
     );
@@ -205,6 +208,16 @@ export async function POST(req: NextRequest) {
     }
 
     clearCache('products_');
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+      revalidatePath('/product/[slug]', 'page');
+      if (slug) revalidatePath(`/product/${slug}`, 'page');
+      if (id) revalidatePath(`/product/${id}`, 'page');
+    } catch (revalErr) {
+      console.warn('[Revalidation Warning]:', revalErr);
+    }
+
     return NextResponse.json({ success: true, data: newProduct }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error creating product';

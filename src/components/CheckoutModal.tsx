@@ -302,7 +302,14 @@ export default function CheckoutModal({ isOpen, onClose, product, items, quantit
         modal: {
           ondismiss: function () {
             setIsSubmitting(false);
-            toast('Payment cancelled', { icon: 'ℹ️' });
+            if (orderData?.orderId) {
+              fetch('/api/razorpay/cancel-reservation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ razorpayOrderId: orderData.orderId }),
+              }).catch(() => {});
+            }
+            toast('Payment cancelled. Stock hold released.', { icon: 'ℹ️' });
           },
         },
       };
@@ -310,6 +317,13 @@ export default function CheckoutModal({ isOpen, onClose, product, items, quantit
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (resp: any) {
         setIsSubmitting(false);
+        if (orderData?.orderId) {
+          fetch('/api/razorpay/cancel-reservation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ razorpayOrderId: orderData.orderId }),
+          }).catch(() => {});
+        }
         toast.error(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
       });
       rzp.open();

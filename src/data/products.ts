@@ -34,6 +34,8 @@ export interface Product {
   preorderAmount?: number;
   colors?: string[];
   colorImages?: { color: string; images: string[] }[];
+  material?: string;
+  description?: string;
 }
 
 export const isPreorderProduct = (product: Product): boolean => {

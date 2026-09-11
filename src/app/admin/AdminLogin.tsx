@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Lock, Mail, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle, KeyRound, RefreshCw } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
 
 interface AdminLoginProps {
   onSuccess: () => void;
@@ -55,13 +55,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || 'Authentication failed. Please check your credentials.');
+        setError(data.error || 'Invalid credentials. Please try again.');
         return;
       }
 
       onSuccess();
-    } catch (err) {
-      setError('Unable to connect to authentication server. Please check your network.');
+    } catch {
+      setError('Unable to connect to server. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -87,15 +87,15 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
         if (data.cooldownSeconds) {
           setCooldown(data.cooldownSeconds);
         }
-        setError(data.error || 'Failed to dispatch security code.');
+        setError(data.error || 'Failed to send reset code.');
         return;
       }
 
-      setSuccessMessage(data.message || 'Verification PIN sent to diecasthubmanjeri@gmail.com');
-      setCooldown(60); // 60-second cooldown
+      setSuccessMessage(data.message || 'Verification code sent to your email.');
+      setCooldown(60);
       setMode('forgot_step2');
-    } catch (err) {
-      setError('Failed to reach recovery server. Please try again.');
+    } catch {
+      setError('Failed to send request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
     const cleanPin = otp.trim();
 
     if (!cleanPin || cleanPin.length !== 6) {
-      setError('Please enter the 6-digit security code received in your email.');
+      setError('Please enter the 6-digit code sent to your email.');
       return;
     }
 
@@ -116,7 +116,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New password and confirmation do not match.');
+      setError('Passwords do not match.');
       return;
     }
 
@@ -137,19 +137,18 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setError(data.error || 'Failed to verify PIN or update password.');
+        setError(data.error || 'Invalid code or failed to reset password.');
         return;
       }
 
-      // Successful reset
       setMode('login');
       setPassword('');
       setOtp('');
       setNewPassword('');
       setConfirmPassword('');
-      setSuccessMessage('Password successfully updated! Please log in with your new password.');
-    } catch (err) {
-      setError('Failed to reach password reset server. Please try again.');
+      setSuccessMessage('Password updated successfully! Please log in.');
+    } catch {
+      setError('Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -163,88 +162,84 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+        background: '#0f172a',
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '440px',
+          maxWidth: '420px',
           backgroundColor: '#1e293b',
           borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           border: '1px solid #334155',
-          padding: '36px 32px',
-          textAlign: 'center',
+          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5)',
+          padding: '36px 30px',
           color: '#ffffff',
         }}
       >
-        {/* Brand Icon */}
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            backgroundColor: '#2563eb',
-            borderRadius: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 18px',
-            color: '#ffffff',
-            boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.5)',
-          }}
-        >
-          {mode === 'login' ? <Shield size={28} /> : <KeyRound size={28} />}
+        {/* Header Icon & Title */}
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+              borderRadius: '12px',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 14px',
+              color: '#60a5fa',
+            }}
+          >
+            {mode === 'login' ? <Lock size={22} /> : <KeyRound size={22} />}
+          </div>
+
+          <h2
+            style={{
+              fontSize: '20px',
+              fontWeight: 700,
+              color: '#f8fafc',
+              marginBottom: '6px',
+              letterSpacing: '-0.2px',
+            }}
+          >
+            {mode === 'login' && 'Admin Login'}
+            {mode === 'forgot_step1' && 'Forgot Password'}
+            {mode === 'forgot_step2' && 'Reset Password'}
+          </h2>
+
+          <p
+            style={{
+              fontSize: '13px',
+              color: '#94a3b8',
+              margin: 0,
+            }}
+          >
+            {mode === 'login' && 'Sign in to access the admin panel'}
+            {mode === 'forgot_step1' && 'A 6-digit code will be sent to your email'}
+            {mode === 'forgot_step2' && `Enter the code sent to ${targetEmail}`}
+          </p>
         </div>
 
-        <h2
-          style={{
-            fontSize: '22px',
-            fontWeight: 800,
-            color: '#f8fafc',
-            marginBottom: '6px',
-            letterSpacing: '-0.3px',
-          }}
-        >
-          {mode === 'login' && 'Diecast Hub Admin Portal'}
-          {mode === 'forgot_step1' && 'Reset Admin Password'}
-          {mode === 'forgot_step2' && 'Enter 6-Digit PIN'}
-        </h2>
-
-        <p
-          style={{
-            fontSize: '13px',
-            color: '#94a3b8',
-            marginBottom: '24px',
-            lineHeight: 1.5,
-          }}
-        >
-          {mode === 'login' && 'Sign in with your master credentials to manage your store.'}
-          {mode === 'forgot_step1' &&
-            'We will send a secure 6-digit verification code to the registered owner email.'}
-          {mode === 'forgot_step2' &&
-            `A 6-digit PIN has been dispatched to ${targetEmail}.`}
-        </p>
-
-        {/* Notifications */}
+        {/* Status Alerts */}
         {error && (
           <div
             style={{
               backgroundColor: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid #ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
               color: '#fca5a5',
-              padding: '12px 14px',
+              padding: '10px 14px',
               borderRadius: '8px',
               fontSize: '13px',
-              fontWeight: 500,
-              marginBottom: '20px',
-              textAlign: 'left',
+              marginBottom: '18px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
             }}
           >
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
@@ -253,38 +248,33 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
           <div
             style={{
               backgroundColor: 'rgba(34, 197, 94, 0.12)',
-              border: '1px solid #22c55e',
+              border: '1px solid rgba(34, 197, 94, 0.35)',
               color: '#86efac',
-              padding: '12px 14px',
+              padding: '10px 14px',
               borderRadius: '8px',
               fontSize: '13px',
-              fontWeight: 500,
-              marginBottom: '20px',
-              textAlign: 'left',
+              marginBottom: '18px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
             }}
           >
-            <CheckCircle size={18} style={{ flexShrink: 0 }} />
+            <CheckCircle size={16} style={{ flexShrink: 0 }} />
             <span>{successMessage}</span>
           </div>
         )}
 
-        {/* ----------------- MODE 1: LOGIN FORM ----------------- */}
+        {/* ----------------- LOGIN FORM ----------------- */}
         {mode === 'login' && (
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Username or Email Input */}
-            <div style={{ textAlign: 'left' }}>
+            <div>
               <label
                 style={{
                   display: 'block',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#cbd5e1',
                   marginBottom: '6px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
                 }}
               >
                 Username or Email
@@ -293,25 +283,27 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 <input
                   type="text"
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="diecasthubmanjeri"
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    if (error) setError('');
+                  }}
+                  placeholder="admin"
                   required
                   autoFocus
                   style={{
                     width: '100%',
-                    padding: '12px 14px 12px 40px',
+                    padding: '11px 14px 11px 38px',
                     borderRadius: '8px',
-                    border: '1px solid #475569',
+                    border: '1px solid #334155',
                     backgroundColor: '#0f172a',
                     color: '#f8fafc',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box',
-                    transition: 'border-color 0.2s',
                   }}
                 />
                 <Mail
-                  size={18}
+                  size={16}
                   style={{
                     position: 'absolute',
                     left: '12px',
@@ -323,16 +315,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
               </div>
             </div>
 
-            {/* Password Input */}
-            <div style={{ textAlign: 'left' }}>
+            <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label
                   style={{
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#cbd5e1',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
                   }}
                 >
                   Password
@@ -349,13 +338,11 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                     border: 'none',
                     color: '#60a5fa',
                     fontSize: '12px',
-                    fontWeight: 600,
                     cursor: 'pointer',
                     padding: 0,
-                    textDecoration: 'underline',
                   }}
                 >
-                  Forgot Password?
+                  Forgot password?
                 </button>
               </div>
 
@@ -363,24 +350,26 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError('');
+                  }}
+                  placeholder="••••••••"
                   required
                   style={{
                     width: '100%',
-                    padding: '12px 40px 12px 40px',
+                    padding: '11px 38px 11px 38px',
                     borderRadius: '8px',
-                    border: '1px solid #475569',
+                    border: '1px solid #334155',
                     backgroundColor: '#0f172a',
                     color: '#f8fafc',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box',
-                    transition: 'border-color 0.2s',
                   }}
                 />
                 <Lock
-                  size={18}
+                  size={16}
                   style={{
                     position: 'absolute',
                     left: '12px',
@@ -406,82 +395,80 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                     alignItems: 'center',
                   }}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading || !identifier.trim() || !password.trim()}
               style={{
                 width: '100%',
-                padding: '13px 18px',
+                padding: '12px',
                 backgroundColor: '#2563eb',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
-                transition: 'background-color 0.2s',
-                marginTop: '6px',
+                marginTop: '4px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
+                transition: 'opacity 0.2s',
               }}
             >
               {loading ? (
                 <>
-                  <RefreshCw size={16} className="spin" /> Verifying Credentials...
+                  <RefreshCw size={15} className="spin" /> Signing in...
                 </>
               ) : (
-                'Unlock Admin Portal'
+                'Sign In'
               )}
             </button>
           </form>
         )}
 
-        {/* ----------------- MODE 2: FORGOT PASSWORD - STEP 1 (REQUEST OTP) ----------------- */}
+        {/* ----------------- FORGOT PASSWORD STEP 1 ----------------- */}
         {mode === 'forgot_step1' && (
           <form onSubmit={handleRequestOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ textAlign: 'left' }}>
+            <div>
               <label
                 style={{
                   display: 'block',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#cbd5e1',
                   marginBottom: '6px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
                 }}
               >
-                Registered Store Admin Email
+                Admin Email
               </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="email"
                   value={targetEmail}
+                  onChange={(e) => setTargetEmail(e.target.value)}
                   readOnly
                   style={{
                     width: '100%',
-                    padding: '12px 14px 12px 40px',
+                    padding: '11px 14px 11px 38px',
                     borderRadius: '8px',
-                    border: '1px solid #475569',
+                    border: '1px solid #334155',
                     backgroundColor: '#0f172a',
                     color: '#94a3b8',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box',
-                    cursor: 'not-allowed',
+                    cursor: 'default',
                   }}
                 />
                 <Mail
-                  size={18}
+                  size={16}
                   style={{
                     position: 'absolute',
                     left: '12px',
@@ -491,9 +478,6 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   }}
                 />
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                Protected email: Security codes can only be sent to the official owner inbox.
-              </span>
             </div>
 
             <button
@@ -501,23 +485,23 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
               disabled={loading || cooldown > 0}
               style={{
                 width: '100%',
-                padding: '13px 18px',
-                backgroundColor: cooldown > 0 ? '#475569' : '#2563eb',
+                padding: '12px',
+                backgroundColor: cooldown > 0 ? '#334155' : '#2563eb',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: loading || cooldown > 0 ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.2s',
-                marginTop: '6px',
+                marginTop: '4px',
+                transition: 'opacity 0.2s',
               }}
             >
               {loading
-                ? 'Dispatching Security PIN...'
+                ? 'Sending Code...'
                 : cooldown > 0
-                ? `Resend Code in ${cooldown}s`
-                : 'Send 6-Digit PIN to Email'}
+                ? `Resend in ${cooldown}s`
+                : 'Send Reset Code'}
             </button>
 
             <button
@@ -537,27 +521,24 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                marginTop: '4px',
+                padding: '4px',
               }}
             >
-              <ArrowLeft size={16} /> Back to Sign In
+              <ArrowLeft size={15} /> Back to Login
             </button>
           </form>
         )}
 
-        {/* ----------------- MODE 3: FORGOT PASSWORD - STEP 2 (ENTER OTP & RESET) ----------------- */}
+        {/* ----------------- FORGOT PASSWORD STEP 2 ----------------- */}
         {mode === 'forgot_step2' && (
           <form onSubmit={handleResetPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* 6-Digit OTP input */}
-            <div style={{ textAlign: 'left' }}>
+            <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label
                   style={{
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#cbd5e1',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
                   }}
                 >
                   6-Digit Verification PIN
@@ -572,13 +553,12 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                       background: 'none',
                       border: 'none',
                       color: '#60a5fa',
-                      fontSize: '11px',
-                      fontWeight: 600,
+                      fontSize: '12px',
                       cursor: 'pointer',
                       padding: 0,
                     }}
                   >
-                    Resend PIN
+                    Resend Code
                   </button>
                 )}
               </div>
@@ -591,18 +571,18 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   setOtp(e.target.value.replace(/\D/g, ''));
                   if (error) setError('');
                 }}
-                placeholder="123456"
+                placeholder="000000"
                 autoFocus
                 required
                 style={{
                   width: '100%',
-                  padding: '12px 14px',
+                  padding: '10px 14px',
                   borderRadius: '8px',
                   border: '1px solid #3b82f6',
                   backgroundColor: '#0f172a',
                   color: '#60a5fa',
-                  fontSize: '22px',
-                  fontWeight: 800,
+                  fontSize: '20px',
+                  fontWeight: 700,
                   letterSpacing: '6px',
                   textAlign: 'center',
                   outline: 'none',
@@ -611,17 +591,14 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
               />
             </div>
 
-            {/* New Password */}
-            <div style={{ textAlign: 'left' }}>
+            <div>
               <label
                 style={{
                   display: 'block',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#cbd5e1',
                   marginBottom: '6px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
                 }}
               >
                 New Password
@@ -634,18 +611,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                     setNewPassword(e.target.value);
                     if (error) setError('');
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword)) {
-                      e.preventDefault();
-                    }
-                  }}
                   placeholder="At least 6 characters"
                   required
                   style={{
                     width: '100%',
-                    padding: '12px 40px 12px 40px',
+                    padding: '11px 38px 11px 38px',
                     borderRadius: '8px',
-                    border: '1px solid #475569',
+                    border: '1px solid #334155',
                     backgroundColor: '#0f172a',
                     color: '#f8fafc',
                     fontSize: '14px',
@@ -654,7 +626,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   }}
                 />
                 <Lock
-                  size={18}
+                  size={16}
                   style={{
                     position: 'absolute',
                     left: '12px',
@@ -680,25 +652,22 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                     alignItems: 'center',
                   }}
                 >
-                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* Confirm Password */}
-            <div style={{ textAlign: 'left' }}>
+            <div>
               <label
                 style={{
                   display: 'block',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#cbd5e1',
                   marginBottom: '6px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
                 }}
               >
-                Confirm New Password
+                Confirm Password
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -708,18 +677,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                     setConfirmPassword(e.target.value);
                     if (error) setError('');
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword)) {
-                      e.preventDefault();
-                    }
-                  }}
                   placeholder="Repeat new password"
                   required
                   style={{
                     width: '100%',
-                    padding: '12px 14px 12px 40px',
+                    padding: '11px 14px 11px 38px',
                     borderRadius: '8px',
-                    border: '1px solid #475569',
+                    border: '1px solid #334155',
                     backgroundColor: '#0f172a',
                     color: '#f8fafc',
                     fontSize: '14px',
@@ -728,7 +692,7 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                   }}
                 />
                 <Lock
-                  size={18}
+                  size={16}
                   style={{
                     position: 'absolute',
                     left: '12px',
@@ -741,34 +705,39 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
               {confirmPassword.length > 0 && (
                 <div style={{ marginTop: '6px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {newPassword === confirmPassword ? (
-                    <span style={{ color: '#4ade80', fontWeight: 600 }}>✓ Passwords match</span>
+                    <span style={{ color: '#4ade80', fontWeight: 500 }}>✓ Passwords match</span>
                   ) : (
-                    <span style={{ color: '#f87171', fontWeight: 600 }}>✗ Passwords do not match</span>
+                    <span style={{ color: '#f87171', fontWeight: 500 }}>✗ Passwords do not match</span>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Submit Reset */}
             <button
               type="submit"
               disabled={loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword}
               style={{
                 width: '100%',
-                padding: '13px 18px',
-                backgroundColor: loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword ? '#334155' : '#16a34a',
+                padding: '12px',
+                backgroundColor:
+                  loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword
+                    ? '#334155'
+                    : '#16a34a',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
-                fontWeight: 700,
-                cursor: loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword ? 'not-allowed' : 'pointer',
+                fontWeight: 600,
+                cursor:
+                  loading || otp.trim().length !== 6 || newPassword.length < 6 || newPassword !== confirmPassword
+                    ? 'not-allowed'
+                    : 'pointer',
                 opacity: loading ? 0.7 : 1,
-                transition: 'background-color 0.2s',
-                marginTop: '6px',
+                marginTop: '4px',
+                transition: 'opacity 0.2s',
               }}
             >
-              {loading ? 'Verifying PIN & Updating...' : 'Verify PIN & Update Password'}
+              {loading ? 'Updating Password...' : 'Update Password'}
             </button>
 
             <button
@@ -788,27 +757,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                marginTop: '4px',
+                padding: '4px',
               }}
             >
-              <ArrowLeft size={16} /> Cancel & Return to Sign In
+              <ArrowLeft size={15} /> Back to Login
             </button>
           </form>
         )}
-
-        {/* Security Footer Notice */}
-        <div
-          style={{
-            marginTop: '28px',
-            paddingTop: '16px',
-            borderTop: '1px solid #334155',
-            fontSize: '11px',
-            color: '#64748b',
-            lineHeight: 1.5,
-          }}
-        >
-          🔒 Backend-protected with PBKDF2 cryptography, HMAC-SHA256 tokens & brute force lockout.
-        </div>
       </div>
     </div>
   );

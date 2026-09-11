@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import { OrderModel } from '@/models/Order';
-import { updateFallbackOrderStatus } from '@/lib/fallbackStorage';
+import { updateFallbackOrderStatus, deleteFallbackOrder } from '@/lib/fallbackStorage';
 import { checkAdminAuth } from '@/lib/adminAuth';
 
 const VALID_STATUSES = ['Pending', 'Shipped', 'Delivered', 'Cancelled'];
@@ -40,8 +41,11 @@ export async function PATCH(
       return NextResponse.json({ success: true, data: updated, source: 'fallback' });
     }
 
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const filter = isObjectId ? { $or: [{ id }, { _id: id }] } : { id };
+
     const updated = await OrderModel.findOneAndUpdate(
-      { id },
+      filter,
       { $set: updateFields },
       { new: true }
     );
@@ -54,6 +58,34 @@ export async function PATCH(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error updating order status';
     console.error('[API Admin Order Status PATCH Error]:', message);
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    if (!checkAdminAuth(req)) {
+      return NextResponse.json({ success: false, error: 'Unauthorized. Admin access required.' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const db = await connectDB();
+    if (!db) {
+      const deleted = deleteFallbackOrder(id);
+      return NextResponse.json({ success: true, deleted, source: 'fallback' });
+    }
+
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const filter = isObjectId ? { $or: [{ id }, { _id: id }] } : { id };
+
+    await OrderModel.deleteOne(filter);
+    return NextResponse.json({ success: true, message: 'Order deleted successfully' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error deleting order';
+    console.error('[API Admin Order DELETE Error]:', message);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }

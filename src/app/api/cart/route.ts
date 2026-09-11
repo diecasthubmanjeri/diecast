@@ -17,15 +17,62 @@ export async function GET(req: NextRequest) {
     const db = await connectDB();
     if (!db) {
       const items = getFallbackCart(sessionId);
-      const res = NextResponse.json({ success: true, items, source: 'fallback' });
+      const fallbackProds = getFallbackProducts();
+      const enriched = items.map((item) => {
+        const prod = fallbackProds.find((p) => p.id === item.id || p.slug === item.id);
+        const liveStock = prod ? (prod.isPreorder ? 99 : Math.max(0, prod.stock)) : (item.stock ?? 99);
+        const finalQty = liveStock > 0 ? Math.min(item.quantity, liveStock) : item.quantity;
+        return {
+          ...item,
+          quantity: finalQty,
+          stock: liveStock,
+        };
+      });
+      saveFallbackCart(sessionId, enriched);
+      const res = NextResponse.json({ success: true, items: enriched, source: 'fallback' });
       if (isNew) attachSessionCookie(res, sessionId);
       return res;
     }
 
-    const cart = await CartModel.findOne({ sessionId }).lean();
+    const cart = await CartModel.findOne({ sessionId });
+    if (!cart) {
+      const res = NextResponse.json({ success: true, items: [] });
+      if (isNew) attachSessionCookie(res, sessionId);
+      return res;
+    }
+
+    let cartModified = false;
+    const enrichedItems = [];
+
+    for (const item of cart.items) {
+      const product = await ProductModel.findOne({ $or: [{ id: item.id }, { slug: item.id }] }).lean();
+      const liveStock = product ? (product.isPreorder ? 99 : Math.max(0, product.stock)) : (item.stock ?? 99);
+      let finalQty = item.quantity;
+      if (liveStock > 0 && finalQty > liveStock) {
+        finalQty = liveStock;
+        item.quantity = liveStock;
+        cartModified = true;
+      }
+      item.stock = liveStock;
+      enrichedItems.push({
+        id: item.id,
+        name: item.name,
+        scale: item.scale,
+        price: item.price,
+        quantity: finalQty,
+        image: item.image,
+        color: item.color,
+        stock: liveStock,
+      });
+    }
+
+    if (cartModified) {
+      await cart.save();
+    }
+
     const res = NextResponse.json({
       success: true,
-      items: cart ? cart.items : [],
+      items: enrichedItems,
     });
 
     if (isNew) attachSessionCookie(res, sessionId);
@@ -52,7 +99,7 @@ export async function POST(req: NextRequest) {
       // Fallback mode
       const fallbackProds = getFallbackProducts();
       const product = fallbackProds.find((p) => p.id === id || p.slug === id);
-      const availableStock = product ? product.stock : 999;
+      const availableStock = product ? (product.isPreorder ? 99 : Math.max(0, product.stock)) : 99;
       const currentItems = getFallbackCart(sessionId);
 
       // Enforce server-authoritative price to prevent client tampering
@@ -64,22 +111,31 @@ export async function POST(req: NextRequest) {
         (item) => item.id === id && (item.color || '') === (color || '')
       );
 
+      let stockExceeded = false;
       if (existingIndex > -1) {
         const targetQty = currentItems[existingIndex].quantity + Number(quantity);
-        currentItems[existingIndex].quantity = Math.min(
-          targetQty,
-          availableStock > 0 ? availableStock : targetQty
-        );
+        if (targetQty > availableStock) {
+          stockExceeded = true;
+          currentItems[existingIndex].quantity = availableStock;
+        } else {
+          currentItems[existingIndex].quantity = targetQty;
+        }
+        currentItems[existingIndex].stock = availableStock;
         currentItems[existingIndex].price = authoritativePrice;
       } else {
+        const targetQty = Number(quantity);
+        if (targetQty > availableStock) {
+          stockExceeded = true;
+        }
         currentItems.push({
           id,
           name: product ? product.name : name,
           scale: (product && product.scale) || scale || '',
           price: authoritativePrice,
-          quantity: Math.min(Number(quantity), availableStock > 0 ? availableStock : Number(quantity)),
+          quantity: Math.min(targetQty, availableStock),
           image: (product && product.image) || image || '',
           color: color || '',
+          stock: availableStock,
         });
       }
 
@@ -96,14 +152,19 @@ export async function POST(req: NextRequest) {
         sessionId
       );
 
-      const res = NextResponse.json({ success: true, items: currentItems, source: 'fallback' });
+      const res = NextResponse.json({
+        success: !stockExceeded,
+        error: stockExceeded ? 'Stock reached maximum limit' : undefined,
+        items: currentItems,
+        source: 'fallback',
+      });
       if (isNew) attachSessionCookie(res, sessionId);
       return res;
     }
 
     // Check available stock and authoritative price from ProductModel
     const product = await ProductModel.findOne({ $or: [{ id }, { slug: id }] });
-    const availableStock = product ? product.stock : 999;
+    const availableStock = product ? (product.isPreorder ? 99 : Math.max(0, product.stock)) : 99;
 
     const authoritativePrice = product
       ? (product.isPreorder && product.preorderAmount && product.preorderAmount > 0 ? product.preorderAmount : product.price)
@@ -117,19 +178,32 @@ export async function POST(req: NextRequest) {
     const existingIndex = cart.items.findIndex(
       (item) => item.id === id && (item.color || '') === (color || '')
     );
+
+    let stockExceeded = false;
     if (existingIndex > -1) {
       const targetQty = cart.items[existingIndex].quantity + Number(quantity);
-      cart.items[existingIndex].quantity = Math.min(targetQty, availableStock > 0 ? availableStock : targetQty);
+      if (targetQty > availableStock) {
+        stockExceeded = true;
+        cart.items[existingIndex].quantity = availableStock;
+      } else {
+        cart.items[existingIndex].quantity = targetQty;
+      }
+      cart.items[existingIndex].stock = availableStock;
       cart.items[existingIndex].price = authoritativePrice;
     } else {
+      const targetQty = Number(quantity);
+      if (targetQty > availableStock) {
+        stockExceeded = true;
+      }
       cart.items.push({
         id,
         name: product ? product.name : name,
         scale: (product && product.scale) || scale || '',
         price: authoritativePrice,
-        quantity: Math.min(Number(quantity), availableStock > 0 ? availableStock : Number(quantity)),
+        quantity: Math.min(targetQty, availableStock),
         image: (product && product.image) || image || '',
         color: color || '',
+        stock: availableStock,
       });
     }
 
@@ -163,7 +237,11 @@ export async function POST(req: NextRequest) {
       console.warn('[Cart Analytics Warning]:', analyticsErr);
     }
 
-    const res = NextResponse.json({ success: true, items: cart.items });
+    const res = NextResponse.json({
+      success: !stockExceeded,
+      error: stockExceeded ? 'Stock reached maximum limit' : undefined,
+      items: cart.items,
+    });
     if (isNew) attachSessionCookie(res, sessionId);
     return res;
   } catch (error: unknown) {
@@ -185,22 +263,44 @@ export async function PATCH(req: NextRequest) {
 
     const db = await connectDB();
     if (!db) {
+      const fallbackProds = getFallbackProducts();
+      const product = fallbackProds.find((p) => p.id === id || p.slug === id);
+      const availableStock = product ? (product.isPreorder ? 99 : Math.max(0, product.stock)) : 99;
+
       const currentItems = getFallbackCart(sessionId);
       let updatedItems: any[];
-      if (quantity <= 0) {
+      let stockExceeded = false;
+
+      if (Number(quantity) <= 0) {
         updatedItems = currentItems.filter((item) => item.id !== id);
       } else {
         const item = currentItems.find((i) => i.id === id);
         if (item) {
-          item.quantity = Number(quantity);
+          const reqQty = Number(quantity);
+          if (reqQty > availableStock) {
+            stockExceeded = true;
+            item.quantity = availableStock;
+          } else {
+            item.quantity = reqQty;
+          }
+          item.stock = availableStock;
         }
         updatedItems = currentItems;
       }
+
       saveFallbackCart(sessionId, updatedItems);
-      const res = NextResponse.json({ success: true, items: updatedItems, source: 'fallback' });
+      const res = NextResponse.json({
+        success: !stockExceeded,
+        error: stockExceeded ? 'Stock reached maximum limit' : undefined,
+        items: updatedItems,
+        source: 'fallback',
+      });
       if (isNew) attachSessionCookie(res, sessionId);
       return res;
     }
+
+    const product = await ProductModel.findOne({ $or: [{ id }, { slug: id }] });
+    const availableStock = product ? (product.isPreorder ? 99 : Math.max(0, product.stock)) : 99;
 
     const cart = await CartModel.findOne({ sessionId });
     if (!cart) {
@@ -209,18 +309,31 @@ export async function PATCH(req: NextRequest) {
       return res;
     }
 
-    if (quantity <= 0) {
+    let stockExceeded = false;
+    const reqQty = Number(quantity);
+
+    if (reqQty <= 0) {
       cart.items = cart.items.filter((item) => item.id !== id);
     } else {
       const existingItem = cart.items.find((item) => item.id === id);
       if (existingItem) {
-        existingItem.quantity = Number(quantity);
+        if (reqQty > availableStock) {
+          stockExceeded = true;
+          existingItem.quantity = availableStock;
+        } else {
+          existingItem.quantity = reqQty;
+        }
+        existingItem.stock = availableStock;
       }
     }
 
     await cart.save();
 
-    const res = NextResponse.json({ success: true, items: cart.items });
+    const res = NextResponse.json({
+      success: !stockExceeded,
+      error: stockExceeded ? 'Stock reached maximum limit' : undefined,
+      items: cart.items,
+    });
     if (isNew) attachSessionCookie(res, sessionId);
     return res;
   } catch (error: unknown) {

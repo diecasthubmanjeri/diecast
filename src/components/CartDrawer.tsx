@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { useCart } from '../context/CartContext';
 import { apiGetOffers, Offer } from '../utils/api';
 import CheckoutModal from './CheckoutModal';
@@ -31,11 +32,20 @@ export default function CartDrawer({ isOpen: propsIsOpen, onClose: propsOnClose 
       }
     }
     loadOffers();
-    return () => { isSubscribed = false; };
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
+  const handleClose = () => {
+    if (propsOnClose) {
+      propsOnClose();
+    } else {
+      contextClose();
+    }
+  };
+
   const isOpen = propsIsOpen !== undefined ? propsIsOpen : contextIsOpen;
-  const handleClose = propsOnClose || contextClose;
 
   // Prevent scrolling when drawer is open
   useEffect(() => {
@@ -53,10 +63,13 @@ export default function CartDrawer({ isOpen: propsIsOpen, onClose: propsOnClose 
     removeFromCart(id);
   };
 
-  const handleQuantityChange = (id: string, newQuantity: number) => {
-    if (newQuantity > 0) {
-      updateQuantity(id, newQuantity);
+  const handleQuantityChange = (id: string, newQuantity: number, maxStock?: number) => {
+    if (newQuantity <= 0) return;
+    if (typeof maxStock === 'number' && maxStock > 0 && newQuantity > maxStock) {
+      toast('Stock reached maximum limit', { icon: 'ℹ️' });
+      return;
     }
+    updateQuantity(id, newQuantity);
   };
 
   const handleProceedToCheckout = () => {
@@ -141,11 +154,36 @@ export default function CartDrawer({ isOpen: propsIsOpen, onClose: propsOnClose 
                   </div>
                   <div className={styles.itemPriceRow}>
                     <div className={styles.quantityControl}>
-                      <button className={styles.qtyBtn} onClick={() => handleQuantityChange(item.id, item.quantity - 1)}>-</button>
-                      <span>{item.quantity}</span>
-                      <button className={styles.qtyBtn} onClick={() => handleQuantityChange(item.id, item.quantity + 1)}>+</button>
+                      <button 
+                        className={styles.qtyBtn} 
+                        onClick={() => handleQuantityChange(item.id, item.quantity - 1, item.stock)}
+                        aria-label="Decrease quantity"
+                      >
+                        -
+                      </button>
+                      <span style={{ minWidth: '22px', textAlign: 'center', fontWeight: 600 }}>{item.quantity}</span>
+                      <button 
+                        className={styles.qtyBtn} 
+                        onClick={() => handleQuantityChange(item.id, item.quantity + 1, item.stock)}
+                        disabled={typeof item.stock === 'number' && item.stock > 0 && item.quantity >= item.stock}
+                        title={typeof item.stock === 'number' && item.stock > 0 && item.quantity >= item.stock ? `Max stock reached (${item.stock} available)` : 'Increase quantity'}
+                        aria-label="Increase quantity"
+                        style={{
+                          opacity: typeof item.stock === 'number' && item.stock > 0 && item.quantity >= item.stock ? 0.4 : 1,
+                          cursor: typeof item.stock === 'number' && item.stock > 0 && item.quantity >= item.stock ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        +
+                      </button>
                     </div>
-                    <span className={styles.itemPrice}>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className={styles.itemPrice}>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                      {typeof item.stock === 'number' && item.stock > 0 && item.stock <= 10 && (
+                        <div style={{ fontSize: '10px', color: item.quantity >= item.stock ? '#ef4444' : '#f59e0b', fontWeight: 600, marginTop: '2px' }}>
+                          {item.quantity >= item.stock ? `Max stock reached (${item.stock})` : `Only ${item.stock} left`}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

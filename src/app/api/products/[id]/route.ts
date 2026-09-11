@@ -10,6 +10,7 @@ import {
 } from '@/lib/fallbackStorage';
 import { checkAdminAuth } from '@/lib/adminAuth';
 import { clearCache } from '@/lib/cache';
+import { revalidatePath } from 'next/cache';
 
 function buildProductQuery(id: string) {
   const decoded = decodeURIComponent(id).trim();
@@ -88,6 +89,17 @@ export async function PUT(
 
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+    }
+
+    clearCache('products_');
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+      revalidatePath('/product/[slug]', 'page');
+      if (updated.slug) revalidatePath(`/product/${updated.slug}`, 'page');
+      if (updated.id) revalidatePath(`/product/${updated.id}`, 'page');
+    } catch (revalErr) {
+      console.warn('[Revalidation Warning]:', revalErr);
     }
 
     return NextResponse.json({ success: true, data: updated });

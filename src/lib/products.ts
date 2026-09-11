@@ -1,10 +1,11 @@
+import { cache } from 'react';
 import { connectDB } from '@/lib/mongodb';
 import { ProductModel } from '@/models/Product';
 import { getFallbackProductById, getFallbackProducts } from '@/lib/fallbackStorage';
 import { Product } from '@/data/products';
 import mongoose from 'mongoose';
 
-export async function fetchProductBySlug(slug: string): Promise<Product | null> {
+export const fetchProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   if (!slug) return null;
   const decoded = decodeURIComponent(slug).trim();
 
@@ -28,4 +29,4 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
   if (fb) return fb;
   const allFb = getFallbackProducts();
   return allFb.find((p) => p.slug === decoded || p.id === decoded) || null;
-}
+});

@@ -85,11 +85,22 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+  },
 };
 
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "../context/CartContext";
 import ScrollToTop from "../components/ScrollToTop";
+import NavigationProgressBar from "../components/NavigationProgressBar";
 
 export default function RootLayout({
   children,
@@ -164,6 +175,9 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <Suspense fallback={null}>
+          <NavigationProgressBar />
+        </Suspense>
         <CartProvider>
           <ScrollToTop />
           <Suspense fallback={<div style={{ height: "72px" }} />}>

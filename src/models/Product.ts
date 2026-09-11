@@ -25,6 +25,8 @@ export interface IProduct {
   preorderAmount?: number;
   colors?: string[];
   colorImages?: { color: string; images: string[] }[];
+  material?: string;
+  description?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -58,6 +60,8 @@ const ProductSchema = new Schema<IProduct>(
       color: { type: String, required: true },
       images: { type: [String], default: [] }
     }],
+    material: { type: String, default: 'Diecast Metal with Plastic Parts', trim: true },
+    description: { type: String, default: '', trim: true },
   },
   {
     timestamps: true,
@@ -66,6 +70,11 @@ const ProductSchema = new Schema<IProduct>(
 );
 
 ProductSchema.index({ name: 'text', brand: 'text', model: 'text', category: 'text' });
+ProductSchema.index({ createdAt: -1 });
+
+if (mongoose.models && mongoose.models.Product) {
+  delete (mongoose.models as any).Product;
+}
 
 export const ProductModel: Model<IProduct> =
   mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

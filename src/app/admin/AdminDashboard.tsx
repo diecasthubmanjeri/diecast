@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Product, collections, Brand, isPreorderProduct, Category } from '../../data/products';
 import {
   apiGetProducts,
@@ -20,6 +20,7 @@ import {
   apiDeleteNews,
   apiGetAdminOrders,
   apiUpdateOrderStatus,
+  apiDeleteAdminOrder,
   apiUploadImage,
   apiGetAdminOffers,
   apiSaveOffer,
@@ -74,6 +75,33 @@ export default function AdminDashboard() {
   // Products State
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productSearch, setProductSearch] = useState('');
+  const [productPage, setProductPage] = useState(1);
+  const [productBrandFilter, setProductBrandFilter] = useState('ALL');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('ALL');
+  const PRODUCTS_PER_PAGE = 25;
+
+  const filteredProducts = useMemo(() => {
+    const q = productSearch.toLowerCase().trim();
+    return products.filter((p) => {
+      const matchSearch =
+        !q ||
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.brand && p.brand.toLowerCase().includes(q)) ||
+        (p.scale && p.scale.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q));
+      const matchBrand = productBrandFilter === 'ALL' || p.brand === productBrandFilter;
+      const matchCategory = productCategoryFilter === 'ALL' || p.category === productCategoryFilter;
+      return matchSearch && matchBrand && matchCategory;
+    });
+  }, [products, productSearch, productBrandFilter, productCategoryFilter]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (productPage - 1) * PRODUCTS_PER_PAGE;
+    return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE);
+  }, [filteredProducts, productPage]);
+
+  const totalProductPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
 
   // News State
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
@@ -81,6 +109,35 @@ export default function AdminDashboard() {
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [orderPage, setOrderPage] = useState(1);
+  const ORDERS_PER_PAGE = 20;
+
+  const filteredOrders = useMemo(() => {
+    const q = orderSearch.toLowerCase().trim();
+    return orders.filter((o) => {
+      const matchStatus = orderStatusFilter === 'ALL' || o.status === orderStatusFilter;
+      const matchSearch =
+        !q ||
+        (o.id && o.id.toLowerCase().includes(q)) ||
+        (o.customerName && o.customerName.toLowerCase().includes(q)) ||
+        (o.customerPhone && o.customerPhone.includes(q)) ||
+        (o.customerEmail && o.customerEmail.toLowerCase().includes(q)) ||
+        (o.city && o.city.toLowerCase().includes(q)) ||
+        (o.state && o.state.toLowerCase().includes(q)) ||
+        (o.trackingId && o.trackingId.toLowerCase().includes(q)) ||
+        (o.items && o.items.some((it) => it.name.toLowerCase().includes(q)));
+      return matchStatus && matchSearch;
+    });
+  }, [orders, orderSearch, orderStatusFilter]);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (orderPage - 1) * ORDERS_PER_PAGE;
+    return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
+  }, [filteredOrders, orderPage]);
+
+  const totalOrderPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
 
   // Offers State
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -125,9 +182,21 @@ export default function AdminDashboard() {
     window.addEventListener('click', unlockAudio);
     window.addEventListener('touchstart', unlockAudio);
 
+    // Register Service Worker for mobile and desktop notification bar alerts
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.warn('[SW Registration Warning]:', err);
+      });
+    }
+
     // Request notification permission if available
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then((perm) => {
+          setNotificationPermission(perm);
+        }).catch(() => {});
+      }
     }
 
     return () => {
@@ -135,6 +204,76 @@ export default function AdminDashboard() {
       window.removeEventListener('touchstart', unlockAudio);
     };
   }, []);
+
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const knownLowStockProductIdsRef = useRef<Set<string>>(new Set());
+
+  const triggerDeviceNotification = useCallback((title: string, options?: NotificationOptions) => {
+    if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+      return;
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          reg.showNotification(title, {
+            icon: '/logo.png',
+            badge: '/logo.png',
+            vibrate: [300, 150, 300],
+            ...options,
+          } as any);
+        })
+        .catch(() => {
+          try {
+            new Notification(title, { icon: '/logo.png', ...options });
+          } catch (_) {}
+        });
+    } else {
+      try {
+        new Notification(title, { icon: '/logo.png', ...options });
+      } catch (_) {}
+    }
+  }, []);
+
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setNotificationPermission(perm);
+        if (perm === 'granted') {
+          toast.success('Device notification bar alerts enabled!');
+          triggerDeviceNotification('🔔 Notifications Activated', {
+            body: 'You will receive phone/PC notification bar alerts for new orders and low stock!',
+          });
+        } else if (perm === 'denied') {
+          toast.error('Notification permission denied. Please allow notifications in your browser settings.');
+        }
+      } catch (err) {
+        console.error('Notification permission error:', err);
+      }
+    } else {
+      toast.error('Notifications not supported in this browser.');
+    }
+  };
+
+  const checkLowStock = useCallback((prods: Product[]) => {
+    if (!prods || prods.length === 0) return;
+    prods.forEach((p) => {
+      if (!p.isPreorder && typeof p.stock === 'number' && p.stock <= 2 && p.stock >= 0) {
+        if (!knownLowStockProductIdsRef.current.has(p.id)) {
+          knownLowStockProductIdsRef.current.add(p.id);
+          triggerDeviceNotification('⚠️ Low Stock Alert - Diecast Hub', {
+            body: `"${p.name}" has only ${p.stock} unit(s) remaining in stock!`,
+            tag: `low-stock-${p.id}`,
+          });
+          toast(`⚠️ Low Stock Alert: "${p.name}" has only ${p.stock} left in stock!`, {
+            icon: '⚠️',
+            duration: 8000,
+          });
+        }
+      }
+    });
+  }, [triggerDeviceNotification]);
 
   const playNotificationSound = useCallback(() => {
     if (isSoundMuted) return;
@@ -156,27 +295,6 @@ export default function AdminDashboard() {
       console.error('[Notification Sound Error]', err);
     }
   }, [isSoundMuted]);
-
-  const testNotificationSound = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().then(() => {
-        setAudioReady(true);
-        toast.success('🔔 Notification sound working!', { icon: '🔊' });
-      }).catch(err => {
-        toast.error('Audio blocked by browser. Please tap anywhere on the page to enable sound.');
-        console.warn('Audio test failed:', err);
-      });
-    } else {
-      const audio = new Audio('/notification.mp3');
-      audio.play().then(() => {
-        setAudioReady(true);
-        toast.success('🔔 Notification sound working!', { icon: '🔊' });
-      }).catch(() => {
-        toast.error('Audio blocked by browser. Please tap anywhere on the page to enable sound.');
-      });
-    }
-  };
 
   const refreshData = useCallback(async () => {
     try {
@@ -202,17 +320,21 @@ export default function AdminDashboard() {
         knownOrderIdsRef.current = new Set(ords.map(o => o.id));
         isInitialOrderLoadRef.current = false;
       }
+      checkLowStock(prods);
     } catch (err) {
       console.error('Error refreshing admin data:', err);
     }
-  }, []);
+  }, [checkLowStock]);
 
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    if (isAuthenticated) {
+      refreshData();
+    }
+  }, [isAuthenticated, refreshData]);
 
   // Live order detection loop: polls every 4 seconds and responds to instant cross-tab events
   useEffect(() => {
+    if (!isAuthenticated) return;
     let isSubscribed = true;
 
     const pollOrders = async () => {
@@ -255,13 +377,11 @@ export default function AdminDashboard() {
             }
           );
 
-          // Push native device notification if permitted
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification('🚨 New Order Placed on Diecast Hub!', {
-              body: `Order #${topOrder.id} (₹${topOrder.totalAmount}) by ${topOrder.customerName}`,
-              icon: '/logo.png',
-            });
-          }
+          // Push native device / phone / PC notification bar alert
+          triggerDeviceNotification('🚨 New Order Received - Diecast Hub!', {
+            body: `Order #${topOrder.id} (₹${topOrder.totalAmount.toLocaleString('en-IN')}) by ${topOrder.customerName}`,
+            tag: `order-${topOrder.id}`,
+          });
         }
       } catch (err) {
         console.error('Error polling for new orders:', err);
@@ -285,15 +405,45 @@ export default function AdminDashboard() {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('diecasthub_new_order_placed', pollOrders);
     };
-  }, [playNotificationSound]);
+  }, [isAuthenticated, playNotificationSound, triggerDeviceNotification]);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status'], trackingId?: string) => {
-    const ok = await apiUpdateOrderStatus(orderId, newStatus, trackingId);
-    if (ok) {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, trackingId: trackingId !== undefined ? trackingId : o.trackingId } : o));
-      toast.success(`Order updated`);
-    } else {
-      toast.error('Failed to update order');
+    const prevOrders = [...orders];
+    // Optimistic instantaneous UI update (0ms lag)
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, trackingId: trackingId !== undefined ? trackingId : o.trackingId } : o));
+    
+    try {
+      const ok = await apiUpdateOrderStatus(orderId, newStatus, trackingId);
+      if (ok) {
+        toast.success(`Order #${orderId} marked as ${newStatus}`);
+      } else {
+        setOrders(prevOrders);
+        toast.error('Failed to update order status');
+      }
+    } catch {
+      setOrders(prevOrders);
+      toast.error('Failed to update order status');
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete order #${orderId}? This cannot be undone.`)) return;
+    const toastId = toast.loading('Deleting order...');
+    const prevOrders = [...orders];
+    // Optimistic instantaneous UI removal (0ms lag)
+    setOrders(prev => prev.filter(o => o.id !== orderId && (o as any)._id !== orderId));
+    try {
+      const ok = await apiDeleteAdminOrder(orderId);
+      if (ok) {
+        toast.success('Order deleted successfully', { id: toastId });
+      } else {
+        setOrders(prevOrders);
+        toast.error('Failed to delete order', { id: toastId });
+      }
+    } catch (err: unknown) {
+      setOrders(prevOrders);
+      const msg = err instanceof Error ? err.message : 'Failed to delete order';
+      toast.error(msg, { id: toastId });
     }
   };
 
@@ -402,7 +552,9 @@ export default function AdminDashboard() {
       releaseDate: '',
       preorderAmount: 0,
       colors: [],
-      colorImages: []
+      colorImages: [],
+      material: 'Diecast Metal with Plastic Parts',
+      description: '',
     });
   };
 
@@ -411,12 +563,28 @@ export default function AdminDashboard() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
-    const toastId = toast.loading('Saving product to database...');
+    const toastId = toast.loading('Saving product...');
+    const isExisting = products.some(p => p.id === editingProduct.id);
+    const prevProducts = [...products];
+    const snapshot = { ...editingProduct };
+
+    // Instant optimistic update (0ms UI lag)
+    setProducts(prev => {
+      const idx = prev.findIndex(p => p.id === snapshot.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = snapshot;
+        return next;
+      }
+      return [snapshot, ...prev];
+    });
+    setEditingProduct(null);
+
     try {
-      const saved = await apiSaveProduct(editingProduct);
+      const saved = await apiSaveProduct(snapshot);
       if (saved) {
         setProducts(prev => {
-          const idx = prev.findIndex(p => p.id === saved.id);
+          const idx = prev.findIndex(p => p.id === snapshot.id || p.id === saved.id);
           if (idx >= 0) {
             const next = [...prev];
             next[idx] = saved;
@@ -424,10 +592,13 @@ export default function AdminDashboard() {
           }
           return [saved, ...prev];
         });
-        toast.success('Product saved to database!', { id: toastId });
-        setEditingProduct(null);
+        toast.success(isExisting ? 'Product updated successfully!' : 'Product added successfully!', { id: toastId });
+      } else {
+        setProducts(prevProducts);
+        toast.error('Failed to save product', { id: toastId });
       }
     } catch (err: unknown) {
+      setProducts(prevProducts);
       const msg = err instanceof Error ? err.message : 'Failed to save product';
       toast.error(msg, { id: toastId });
     }
@@ -456,7 +627,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (editingProduct) {
       setEditingProduct({
@@ -525,7 +696,7 @@ export default function AdminDashboard() {
     if (files.length === 0) return;
 
     setIsUploadingImage(true);
-    const toastId = toast.loading(`Uploading ${files.length} image(s) to Cloudinary...`);
+    const toastId = toast.loading('Image uploading... Please wait.');
     try {
       const uploadPromises = files.map(file => apiUploadImage(file, 'diecast/products'));
       const uploadedUrls = await Promise.all(uploadPromises);
@@ -538,7 +709,7 @@ export default function AdminDashboard() {
         image: editingProduct.image ? editingProduct.image : uploadedUrls[0],
         gallery: newGallery,
       });
-      toast.success('Images uploaded to Cloudinary successfully!', { id: toastId });
+      toast.success('Image successfully uploaded!', { id: toastId });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       toast.error(msg, { id: toastId });
@@ -855,14 +1026,6 @@ export default function AdminDashboard() {
             </span>
             <button 
               type="button" 
-              className={styles.btnSoundTest} 
-              onClick={testNotificationSound}
-              title="Test notification sound and unlock audio"
-            >
-              🔔 Test Sound
-            </button>
-            <button 
-              type="button" 
               className={`${styles.btnSoundToggle} ${isSoundMuted ? styles.btnSoundMuted : ''}`} 
               onClick={() => {
                 const nextState = !isSoundMuted;
@@ -872,6 +1035,19 @@ export default function AdminDashboard() {
               title={isSoundMuted ? "Sound muted. Click to enable" : "Sound active. Click to mute"}
             >
               {isSoundMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
+            </button>
+            <button
+              type="button"
+              className={styles.btnSoundToggle}
+              style={{
+                background: notificationPermission === 'granted' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                borderColor: notificationPermission === 'granted' ? '#22c55e' : '#3b82f6',
+                color: notificationPermission === 'granted' ? '#22c55e' : '#60a5fa',
+              }}
+              onClick={requestNotificationPermission}
+              title="Click to enable or test device/phone notification bar alerts"
+            >
+              {notificationPermission === 'granted' ? '🔔 Device Alerts: ACTIVE' : '🔔 Enable Notification Bar'}
             </button>
           </div>
         </div>
@@ -997,6 +1173,58 @@ export default function AdminDashboard() {
 
       {activeTab === 'inventory' && (
         <div className={`${styles.main} ${editingProduct ? styles.mainEditing : ''}`}>
+          {/* Fast Search & Filter Toolbar */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search products by name, brand, scale..."
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setProductPage(1);
+                }}
+                className={styles.input}
+                style={{ maxWidth: '340px', padding: '8px 12px' }}
+              />
+              <select
+                className={styles.select}
+                style={{ width: 'auto', padding: '8px 12px' }}
+                value={productBrandFilter}
+                onChange={(e) => {
+                  setProductBrandFilter(e.target.value);
+                  setProductPage(1);
+                }}
+              >
+                <option value="ALL">All Brands ({products.length})</option>
+                {localBrands.map((b) => (
+                  <option key={b.name} value={b.name}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                className={styles.select}
+                style={{ width: 'auto', padding: '8px 12px' }}
+                value={productCategoryFilter}
+                onChange={(e) => {
+                  setProductCategoryFilter(e.target.value);
+                  setProductPage(1);
+                }}
+              >
+                <option value="ALL">All Categories</option>
+                {localCategories.map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+              Showing {paginatedProducts.length} of {filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'}
+            </div>
+          </div>
+
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
@@ -1011,7 +1239,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product, idx) => (
+                {paginatedProducts.map((product, idx) => (
                   <tr key={`adm-p-${product.id || idx}`}>
                     <td style={{ fontWeight: 500 }}>{product.name}</td>
                     <td>{product.brand}</td>
@@ -1051,8 +1279,41 @@ export default function AdminDashboard() {
                     </td>
                   </tr>
                 ))}
+                {paginatedProducts.length === 0 && (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '28px', color: '#64748b' }}>
+                      No products match your filter criteria.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
+
+            {totalProductPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                <button
+                  type="button"
+                  className={styles.btnEdit}
+                  disabled={productPage <= 1}
+                  onClick={() => setProductPage((p) => Math.max(1, p - 1))}
+                  style={{ opacity: productPage <= 1 ? 0.5 : 1, cursor: productPage <= 1 ? 'not-allowed' : 'pointer' }}
+                >
+                  ← Previous
+                </button>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                  Page {productPage} of {totalProductPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.btnEdit}
+                  disabled={productPage >= totalProductPages}
+                  onClick={() => setProductPage((p) => Math.min(totalProductPages, p + 1))}
+                  style={{ opacity: productPage >= totalProductPages ? 0.5 : 1, cursor: productPage >= totalProductPages ? 'not-allowed' : 'pointer' }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
 
           {editingProduct && (
@@ -1077,7 +1338,7 @@ export default function AdminDashboard() {
                   />
                   {isUploadingImage && (
                     <div style={{ color: '#0070f3', fontSize: '13px', marginTop: '6px', fontWeight: 500 }}>
-                      ⏳ Uploading images to Cloudinary... Please wait.
+                      ⏳ Image uploading... Please wait.
                     </div>
                   )}
                   <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
@@ -1280,6 +1541,35 @@ export default function AdminDashboard() {
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Stock Quantity</label>
                   <input type="number" name="stock" className={styles.input} value={editingProduct.stock} onChange={handleProductChange} required />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Material</label>
+                  <input 
+                    type="text" 
+                    name="material" 
+                    placeholder="e.g. Diecast Metal with Plastic Parts" 
+                    className={styles.input} 
+                    value={editingProduct.material ?? ''} 
+                    onChange={handleProductChange} 
+                  />
+                  <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                    Default if left empty: Diecast Metal with Plastic Parts
+                  </small>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Product Description (Custom)</label>
+                  <textarea 
+                    name="description" 
+                    rows={4}
+                    placeholder="Enter detailed custom description for this product (or leave blank for standard template)..." 
+                    className={styles.input} 
+                    value={editingProduct.description ?? ''} 
+                    onChange={handleProductChange} 
+                    style={{ resize: 'vertical', minHeight: '80px', fontFamily: 'inherit' }}
+                  />
+                  <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                    Shown on the product detail page. If left blank, the standard craftsmanship description will be displayed.
+                  </small>
                 </div>
                 <button type="submit" className={styles.btnSave}>Save Changes</button>
               </form>
@@ -1563,6 +1853,53 @@ export default function AdminDashboard() {
 
       {activeTab === 'orders' && (
         <div className={styles.main}>
+          {/* Fast Search & Status Filter Toolbar */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search by ID, customer name, phone, city..."
+                value={orderSearch}
+                onChange={(e) => {
+                  setOrderSearch(e.target.value);
+                  setOrderPage(1);
+                }}
+                className={styles.input}
+                style={{ maxWidth: '340px', padding: '8px 12px' }}
+              />
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                {['ALL', 'Pending', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => {
+                      setOrderStatusFilter(st);
+                      setOrderPage(1);
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: orderStatusFilter === st ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      backgroundColor: orderStatusFilter === st ? '#eff6ff' : '#ffffff',
+                      color: orderStatusFilter === st ? '#1d4ed8' : '#64748b',
+                      fontWeight: orderStatusFilter === st ? 700 : 500,
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {st === 'ALL'
+                      ? `All (${orders.length})`
+                      : `${st} (${orders.filter((o) => o.status === st).length})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+              Showing {paginatedOrders.length} of {filteredOrders.length} order{filteredOrders.length === 1 ? '' : 's'}
+            </div>
+          </div>
+
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
@@ -1577,7 +1914,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order, idx) => (
+                {paginatedOrders.map((order, idx) => (
                   <tr key={`adm-o-${order.id || idx}`}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{order.id}</div>
@@ -1731,17 +2068,74 @@ export default function AdminDashboard() {
                             }
                           }}
                         />
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOrder(order.id)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                            padding: '5px 10px',
+                            backgroundColor: '#fee2e2',
+                            color: '#dc2626',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            marginTop: '2px',
+                            transition: 'all 0.15s ease',
+                          }}
+                          title={`Delete Order #${order.id}`}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                          </svg>
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {orders.length === 0 && (
+                {paginatedOrders.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '24px' }}>No orders found.</td>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '28px', color: '#64748b' }}>
+                      No orders found matching your search or filters.
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
+
+            {totalOrderPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                <button
+                  type="button"
+                  className={styles.btnEdit}
+                  disabled={orderPage <= 1}
+                  onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
+                  style={{ opacity: orderPage <= 1 ? 0.5 : 1, cursor: orderPage <= 1 ? 'not-allowed' : 'pointer' }}
+                >
+                  ← Previous
+                </button>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                  Page {orderPage} of {totalOrderPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.btnEdit}
+                  disabled={orderPage >= totalOrderPages}
+                  onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
+                  style={{ opacity: orderPage >= totalOrderPages ? 0.5 : 1, cursor: orderPage >= totalOrderPages ? 'not-allowed' : 'pointer' }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -21,6 +21,7 @@ export interface FallbackCartItem {
   quantity: number;
   image: string;
   color?: string;
+  stock?: number;
 }
 
 export interface FallbackCart {
@@ -264,6 +265,8 @@ export function saveFallbackProduct(body: any): Product {
     releaseDate: body.releaseDate || '',
     preorderAmount: Number(body.preorderAmount) || 0,
     colors: Array.isArray(body.colors) ? body.colors : [],
+    material: body.material !== undefined ? String(body.material).trim() : 'Diecast Metal with Plastic Parts',
+    description: body.description !== undefined ? String(body.description).trim() : '',
   };
 
   const existingIdx = data.products.findIndex((p) => p.id === id);
@@ -369,6 +372,17 @@ export function updateFallbackOrderStatus(id: string, updates: any): any | null 
   };
   writeDataFile(data);
   return data.orders[idx];
+}
+
+export function deleteFallbackOrder(id: string): boolean {
+  const data = ensureDataFile();
+  const initLen = data.orders.length;
+  data.orders = data.orders.filter((o) => o.id !== id);
+  if (data.orders.length !== initLen) {
+    writeDataFile(data);
+    return true;
+  }
+  return false;
 }
 
 // ---------------- BRANDS ----------------
@@ -691,5 +705,34 @@ export function saveFallbackAdmin(adminData: Partial<FallbackAdmin>): FallbackAd
 
   writeDataFile(data);
   return data.admin;
+}
+
+export interface FallbackReservation {
+  razorpayOrderId: string;
+  items: { productId: string; quantity: number }[];
+  expiresAt: number;
+}
+
+let inMemoryFallbackReservations: FallbackReservation[] = [];
+
+export function getActiveFallbackReservations(productId: string): number {
+  const now = Date.now();
+  inMemoryFallbackReservations = inMemoryFallbackReservations.filter((r) => r.expiresAt > now);
+  return inMemoryFallbackReservations.reduce((sum, r) => {
+    const item = r.items.find((i) => i.productId === productId);
+    return sum + (item ? item.quantity : 0);
+  }, 0);
+}
+
+export function saveFallbackReservation(reservation: FallbackReservation): void {
+  const now = Date.now();
+  inMemoryFallbackReservations = inMemoryFallbackReservations.filter((r) => r.expiresAt > now);
+  inMemoryFallbackReservations.push(reservation);
+}
+
+export function removeFallbackReservation(razorpayOrderId: string): void {
+  inMemoryFallbackReservations = inMemoryFallbackReservations.filter(
+    (r) => r.razorpayOrderId !== razorpayOrderId
+  );
 }
 

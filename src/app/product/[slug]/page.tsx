@@ -5,6 +5,9 @@ import { SITE_URL, BUSINESS_INFO } from '@/lib/siteConfig';
 import { isPreorderProduct } from '@/data/products';
 import ProductDetailClient from './ProductDetailClient';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }

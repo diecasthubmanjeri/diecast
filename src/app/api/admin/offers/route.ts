@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import { OfferModel } from '@/models/Offer';
 import {
@@ -123,8 +124,11 @@ export async function PATCH(req: NextRequest) {
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
 
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const filter = isObjectId ? { $or: [{ id }, { _id: id }] } : { id };
+
     const updatedOffer = await OfferModel.findOneAndUpdate(
-      { $or: [{ id }, { _id: id }] },
+      filter,
       { $set: updates },
       { new: true }
     );
@@ -162,7 +166,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: deleted, source: 'fallback' });
     }
 
-    const res = await OfferModel.deleteOne({ $or: [{ id }, { _id: id }] });
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const filter = isObjectId ? { $or: [{ id }, { _id: id }] } : { id };
+    const res = await OfferModel.deleteOne(filter);
     clearCache('public_active_offers');
     return NextResponse.json({ success: res.deletedCount > 0 });
   } catch (error: unknown) {

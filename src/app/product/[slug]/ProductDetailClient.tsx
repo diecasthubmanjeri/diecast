@@ -82,6 +82,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       quantity: quantity,
       image: product.image,
       color: selectedColor || undefined,
+      stock: product.stock,
+      isPreorder: isPreorder,
     });
     toast.success(isPreorder ? 'Added pre-order to cart!' : 'Added to cart!');
   };
@@ -358,26 +360,34 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   </li>
                 )}
                 <li>
-                  <strong>Material:</strong> Diecast Metal with Plastic Parts
+                  <strong>Material:</strong> {product.material || 'Diecast Metal with Plastic Parts'}
                 </li>
               </ul>
             </div>
 
             <div className={styles.description}>
               <h2 className={styles.sectionTitle}>Product Description</h2>
-              <p>
-                Experience exceptional craftsmanship with this <strong>{product.scale} scale die-cast car model</strong>,
-                meticulously designed with realistic details and a smooth finish. Featuring a finely detailed exterior,
-                high-quality paintwork, and authentic styling, this model is an excellent addition to any die-cast collection.
-              </p>
-              <p>
-                Crafted from <strong>high-quality metal and plastic components</strong>, it is built for durability and long-lasting display.
-                The <strong>free-rolling wheels</strong> and <strong>durable rubber tires</strong> enhance its realistic appearance, making it ideal for collectors and automotive enthusiasts.
-              </p>
-              <p>
-                Perfect for <strong>collectors, display shelves, office desks, home decor, gifts, and retail displays</strong>,
-                this {product.scale} scale model offers an eye-catching display piece for any space.
-              </p>
+              {product.description && product.description.trim() ? (
+                <div style={{ whiteSpace: 'pre-line', lineHeight: '1.7', color: '#475569', fontSize: '15px' }}>
+                  {product.description}
+                </div>
+              ) : (
+                <>
+                  <p>
+                    Experience exceptional craftsmanship with this <strong>{product.scale} scale die-cast car model</strong>,
+                    meticulously designed with realistic details and a smooth finish. Featuring a finely detailed exterior,
+                    high-quality paintwork, and authentic styling, this model is an excellent addition to any die-cast collection.
+                  </p>
+                  <p>
+                    Crafted from <strong>{product.material || 'high-quality metal and plastic components'}</strong>, it is built for durability and long-lasting display.
+                    The <strong>free-rolling wheels</strong> and <strong>durable rubber tires</strong> enhance its realistic appearance, making it ideal for collectors and automotive enthusiasts.
+                  </p>
+                  <p>
+                    Perfect for <strong>collectors, display shelves, office desks, home decor, gifts, and retail displays</strong>,
+                    this {product.scale} scale model offers an eye-catching display piece for any space.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

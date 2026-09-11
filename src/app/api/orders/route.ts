@@ -4,12 +4,14 @@ import { OrderModel, IOrderItem } from '@/models/Order';
 import { ProductModel } from '@/models/Product';
 import { CartModel } from '@/models/Cart';
 import { OfferModel } from '@/models/Offer';
+import { ReservationModel } from '@/models/Reservation';
 import { getOrCreateSessionId, attachSessionCookie } from '@/lib/session';
 import {
   getFallbackOrders,
   saveFallbackOrder,
   getFallbackProducts,
   getFallbackOffers,
+  removeFallbackReservation,
 } from '@/lib/fallbackStorage';
 import { verifyRazorpaySignature } from '@/lib/razorpay';
 
@@ -95,38 +97,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Order must contain at least one item.' }, { status: 400 });
     }
 
-    // 2. Cryptographic Payment Verification (Prevents Payment Bypass / Manipulation)
-    let paymentStatus: 'Paid' | 'Pending' | 'Failed' = 'Paid';
-    if (paymentMethod === 'Razorpay') {
-      if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
-        return NextResponse.json(
-          { success: false, error: 'Payment verification failed: missing Razorpay transaction signature.' },
-          { status: 400 }
-        );
-      }
-
-      const isValid = verifyRazorpaySignature({
-        orderId: String(razorpayOrderId),
-        paymentId: String(razorpayPaymentId),
-        signature: String(razorpaySignature),
-      });
-
-      if (!isValid) {
-        return NextResponse.json(
-          { success: false, error: 'Payment signature verification failed. Tampered or fraudulent transaction.' },
-          { status: 400 }
-        );
-      }
-      paymentStatus = 'Paid';
-    } else {
-      // For any offline / non-Razorpay method if ever allowed, default to Pending
-      paymentStatus = 'Pending';
+    // 2. Strict Cryptographic Payment Verification & Anti-Replay Protection
+    if (paymentMethod !== 'Razorpay') {
+      return NextResponse.json(
+        { success: false, error: 'Only verified online payments via Razorpay are accepted.' },
+        { status: 400 }
+      );
     }
+
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return NextResponse.json(
+        { success: false, error: 'Payment verification failed: missing Razorpay transaction signature.' },
+        { status: 400 }
+      );
+    }
+
+    const isValid = verifyRazorpaySignature({
+      orderId: String(razorpayOrderId),
+      paymentId: String(razorpayPaymentId),
+      signature: String(razorpaySignature),
+    });
+
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, error: 'Payment signature verification failed. Tampered or fraudulent transaction.' },
+        { status: 400 }
+      );
+    }
+
+    const paymentStatus: 'Paid' | 'Pending' | 'Failed' = 'Paid';
 
     const { sessionId, isNew } = getOrCreateSessionId(req);
     const db = await connectDB();
 
     if (!db) {
+      const fallbackOrders = getFallbackOrders();
+      const existingFallback = fallbackOrders.find((o) => o.razorpayPaymentId === String(razorpayPaymentId));
+      if (existingFallback) {
+        return NextResponse.json(
+          { success: false, error: 'This payment transaction has already been processed.' },
+          { status: 400 }
+        );
+      }
+
       const validatedItems: IOrderItem[] = [];
       let calculatedSubtotal = 0;
       const fallbackProds = getFallbackProducts();
@@ -200,12 +213,24 @@ export async function POST(req: NextRequest) {
         razorpaySignature: razorpaySignature || '',
       });
 
+      if (razorpayOrderId) {
+        removeFallbackReservation(String(razorpayOrderId));
+      }
+
       const res = NextResponse.json({ success: true, data: newOrder, source: 'fallback' }, { status: 201 });
       if (isNew) attachSessionCookie(res, sessionId);
       return res;
     }
 
-    // 3. MongoDB: Server-Authoritative Price Calculation & Atomic Stock Verification
+    // 3. MongoDB: Anti-Replay Check, Server-Authoritative Price Calculation & Atomic Stock Verification
+    const existingOrder = await OrderModel.findOne({ razorpayPaymentId: String(razorpayPaymentId) });
+    if (existingOrder) {
+      return NextResponse.json(
+        { success: false, error: 'This payment transaction has already been processed for an existing order.' },
+        { status: 400 }
+      );
+    }
+
     const validatedItems: IOrderItem[] = [];
     let calculatedSubtotal = 0;
 
@@ -321,6 +346,15 @@ export async function POST(req: NextRequest) {
     // 4. Clear cart if checked out from cart
     if (clearCartAfterOrder) {
       await CartModel.findOneAndUpdate({ sessionId }, { $set: { items: [] } });
+    }
+
+    // 5. Release temporary stock reservation
+    if (razorpayOrderId) {
+      try {
+        await ReservationModel.deleteMany({ razorpayOrderId: String(razorpayOrderId) });
+      } catch (delErr) {
+        console.warn('[Reservation Delete Warning]:', delErr);
+      }
     }
 
     const res = NextResponse.json({ success: true, data: newOrder }, { status: 201 });

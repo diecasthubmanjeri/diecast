@@ -3,7 +3,13 @@ import { getRazorpayInstance } from '@/lib/razorpay';
 import { connectDB } from '@/lib/mongodb';
 import { ProductModel } from '@/models/Product';
 import { OfferModel } from '@/models/Offer';
-import { getFallbackProducts, getFallbackOffers } from '@/lib/fallbackStorage';
+import { ReservationModel } from '@/models/Reservation';
+import {
+  getFallbackProducts,
+  getFallbackOffers,
+  getActiveFallbackReservations,
+  saveFallbackReservation,
+} from '@/lib/fallbackStorage';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,6 +28,22 @@ export async function POST(req: NextRequest) {
         for (const item of items) {
           const qty = Math.max(1, Number(item.quantity) || 1);
           const prod = fallbackProds.find((p) => p.id === item.id || p.slug === item.id);
+          if (prod && !prod.isPreorder) {
+            const activeHold = getActiveFallbackReservations(prod.id);
+            const effectiveStock = prod.stock - activeHold;
+            if (effectiveStock < qty) {
+              return NextResponse.json(
+                {
+                  success: false,
+                  error:
+                    effectiveStock <= 0
+                      ? `"${prod.name}" is currently reserved by another customer completing checkout. Please try again in a few minutes.`
+                      : `Cannot proceed: "${prod.name}" only has ${effectiveStock} unit(s) left (${activeHold} held in active checkouts).`,
+                },
+                { status: 409 }
+              );
+            }
+          }
           const price = prod
             ? (prod.isPreorder && prod.preorderAmount && prod.preorderAmount > 0 ? prod.preorderAmount : prod.price)
             : Math.max(0, Number(item.price) || 0);
@@ -37,9 +59,35 @@ export async function POST(req: NextRequest) {
           : 0;
         payableTotal = Math.max(1, calculatedSubtotal - discountAmount);
       } else {
+        const now = new Date();
         for (const item of items) {
           const qty = Math.max(1, Number(item.quantity) || 1);
           const prod = await ProductModel.findOne({ $or: [{ id: item.id }, { slug: item.id }] });
+          if (prod && !prod.isPreorder) {
+            // Find active unexpired reservations for this product
+            const activeReservations = await ReservationModel.find({
+              'items.productId': prod.id,
+              expiresAt: { $gt: now },
+            }).lean();
+            const totalReserved = activeReservations.reduce((sum, r) => {
+              const found = r.items.find((i) => i.productId === prod.id);
+              return sum + (found ? found.quantity : 0);
+            }, 0);
+
+            const effectiveStock = prod.stock - totalReserved;
+            if (effectiveStock < qty) {
+              return NextResponse.json(
+                {
+                  success: false,
+                  error:
+                    effectiveStock <= 0
+                      ? `"${prod.name}" is currently reserved by another customer completing checkout. Please try again in a few minutes.`
+                      : `Cannot proceed: "${prod.name}" only has ${effectiveStock} unit(s) left (${totalReserved} held in active checkouts).`,
+                },
+                { status: 409 }
+              );
+            }
+          }
           const price = prod
             ? (prod.isPreorder && prod.preorderAmount && prod.preorderAmount > 0 ? prod.preorderAmount : prod.price)
             : Math.max(0, Number(item.price) || 0);
@@ -78,10 +126,38 @@ export async function POST(req: NextRequest) {
       notes: notes || {},
     });
 
+    // 10-Minute Film Seat Booking Style Temporary Stock Hold
+    if (Array.isArray(items) && items.length > 0) {
+      const reservationItems = items.map((item: any) => ({
+        productId: item.id,
+        quantity: Math.max(1, Number(item.quantity) || 1),
+      }));
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minute hold
+
+      try {
+        const db = await connectDB();
+        if (db) {
+          await ReservationModel.create({
+            razorpayOrderId: order.id,
+            items: reservationItems,
+            expiresAt,
+          });
+        } else {
+          saveFallbackReservation({
+            razorpayOrderId: order.id,
+            items: reservationItems,
+            expiresAt: expiresAt.getTime(),
+          });
+        }
+      } catch (reserveErr) {
+        console.warn('[Reservation Hold Warning]:', reserveErr);
+      }
+    }
+
     const keyId =
       process.env.RAZORPAY_KEY_ID ||
       process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-      'rzp_test_TZAp3OiWkGlLZH';
+      'rzp_live_TamrhwLSG7gdpa';
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 
 export interface CartItem {
   id: string;
@@ -10,6 +11,8 @@ export interface CartItem {
   quantity: number;
   image: string;
   color?: string;
+  stock?: number;
+  isPreorder?: boolean;
 }
 
 interface CartContextType {
@@ -63,11 +66,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = useCallback(() => setIsCartOpen(false), []);
 
   const addToCart = useCallback(async (item: CartItem) => {
+    // Check against available stock
+    const existing = cartItems.find((i) => i.id === item.id);
+    const availableStock = typeof item.stock === 'number' ? item.stock : existing?.stock;
+
+    if (availableStock !== undefined && availableStock > 0) {
+      const currentQty = existing ? existing.quantity : 0;
+      if (currentQty + item.quantity > availableStock) {
+        toast('Stock reached maximum limit', { icon: 'ℹ️' });
+        setIsCartOpen(true);
+        return;
+      }
+    }
+
     // Optimistic UI update
-    setCartItems(prev => {
-      const existing = prev.find(i => i.id === item.id);
-      if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i);
+    setCartItems((prev) => {
+      const existingItem = prev.find((i) => i.id === item.id);
+      if (existingItem) {
+        const newQty = existingItem.quantity + item.quantity;
+        return prev.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                quantity:
+                  typeof availableStock === 'number' && availableStock > 0
+                    ? Math.min(newQty, availableStock)
+                    : newQty,
+                stock: availableStock ?? i.stock,
+              }
+            : i
+        );
       }
       return [...prev, item];
     });
@@ -81,16 +109,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(item),
       });
       const data = await res.json();
-      if (data.success && Array.isArray(data.items)) {
+      if (!data.success && data.error) {
+        if (data.error.toLowerCase().includes('stock') || data.error.toLowerCase().includes('limit')) {
+          toast('Stock reached maximum limit', { icon: 'ℹ️' });
+        } else {
+          toast.error(data.error);
+        }
+      }
+      if (Array.isArray(data.items)) {
         setCartItems(data.items);
       }
     } catch (e) {
       console.error('[Cart] Failed to persist add to database:', e);
     }
-  }, []);
+  }, [cartItems]);
 
   const removeFromCart = useCallback(async (id: string) => {
-    setCartItems(prev => prev.filter(i => i.id !== id));
+    setCartItems((prev) => prev.filter((i) => i.id !== id));
 
     try {
       const res = await fetch(`/api/cart?id=${encodeURIComponent(id)}`, {
@@ -111,7 +146,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setCartItems(prev => prev.map(i => i.id === id ? { ...i, quantity } : i));
+    const currentItem = cartItems.find((i) => i.id === id);
+    if (currentItem && typeof currentItem.stock === 'number' && currentItem.stock > 0) {
+      if (quantity > currentItem.stock) {
+        toast('Stock reached maximum limit', { icon: 'ℹ️' });
+        return;
+      }
+    }
+
+    setCartItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
 
     try {
       const res = await fetch('/api/cart', {
@@ -120,13 +163,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ id, quantity }),
       });
       const data = await res.json();
-      if (data.success && Array.isArray(data.items)) {
+      if (!data.success && data.error) {
+        if (data.error.toLowerCase().includes('stock') || data.error.toLowerCase().includes('limit')) {
+          toast('Stock reached maximum limit', { icon: 'ℹ️' });
+        } else {
+          toast.error(data.error);
+        }
+      }
+      if (Array.isArray(data.items)) {
         setCartItems(data.items);
       }
     } catch (e) {
       console.error('[Cart] Failed to update item quantity in database:', e);
     }
-  }, [removeFromCart]);
+  }, [cartItems, removeFromCart]);
 
   const clearCart = useCallback(async () => {
     setCartItems([]);
