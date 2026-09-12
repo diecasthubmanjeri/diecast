@@ -1200,8 +1200,8 @@ export default function AdminDashboard() {
             
             <div className={styles.inventoryFilters}>
               <select
-                className={styles.ordersSearchInput}
-                style={{ width: '160px', cursor: 'pointer' }}
+                className={styles.inventorySelect}
+                style={{ width: '160px' }}
                 value={productBrandFilter}
                 onChange={(e) => {
                   setProductBrandFilter(e.target.value);
@@ -1216,8 +1216,8 @@ export default function AdminDashboard() {
                 ))}
               </select>
               <select
-                className={styles.ordersSearchInput}
-                style={{ width: '160px', cursor: 'pointer' }}
+                className={styles.inventorySelect}
+                style={{ width: '160px' }}
                 value={productCategoryFilter}
                 onChange={(e) => {
                   setProductCategoryFilter(e.target.value);
