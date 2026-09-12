@@ -83,7 +83,9 @@ export default function CheckoutModal({ isOpen, onClose, product, items, quantit
         quantity: Math.max(1, i.quantity || 1),
         image: i.image,
         scale: i.scale,
-        color: i.color
+        color: i.color,
+        stock: i.stock,
+        isPreorder: i.isPreorder
       }))
     : product
     ? [{
@@ -93,7 +95,9 @@ export default function CheckoutModal({ isOpen, onClose, product, items, quantit
         quantity: Math.max(1, quantity || 1),
         image: product.image,
         scale: product.scale,
-        color: selectedColor || undefined
+        color: selectedColor || undefined,
+        stock: product.stock,
+        isPreorder: isPreorder
       }]
     : [];
 
@@ -154,6 +158,12 @@ export default function CheckoutModal({ isOpen, onClose, product, items, quantit
     const state = stateSelect?.value?.trim() || '';
 
     // Form validations
+    const hasOutOfStock = checkoutItems.some(i => typeof i.stock === 'number' && i.stock === 0 && !i.isPreorder);
+    if (hasOutOfStock) {
+      toast.error('Please remove out of stock items before proceeding.');
+      return;
+    }
+
     if (!customerName || customerName.length < 2) {
       toast.error('Please enter your full name');
       nameInput?.focus();

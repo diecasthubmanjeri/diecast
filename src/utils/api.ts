@@ -22,6 +22,8 @@ export interface OrderItem {
   image: string;
   scale?: string;
   color?: string;
+  stock?: number;
+  isPreorder?: boolean;
 }
 
 export interface Order {
