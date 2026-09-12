@@ -183,6 +183,11 @@ export default function CartDrawer({ isOpen: propsIsOpen, onClose: propsOnClose 
                           {item.quantity >= item.stock ? `Max stock reached (${item.stock})` : `Only ${item.stock} left`}
                         </div>
                       )}
+                      {typeof item.stock === 'number' && item.stock === 0 && !item.isPreorder && (
+                        <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: 700, marginTop: '4px' }}>
+                          Out of Stock
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -250,11 +255,18 @@ export default function CartDrawer({ isOpen: propsIsOpen, onClose: propsOnClose 
               ₹{total.toLocaleString('en-IN')}
             </span>
           </div>
+
+          {cartItems.some(i => typeof i.stock === 'number' && i.stock === 0 && !i.isPreorder) && (
+            <div style={{ color: '#ef4444', fontSize: '12px', textAlign: 'center', marginBottom: '10px', fontWeight: 600 }}>
+              Please remove out of stock items to proceed
+            </div>
+          )}
+
           <button 
             className={styles.checkoutBtn}
             onClick={handleProceedToCheckout}
-            disabled={cartItems.length === 0}
-            style={cartItems.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            disabled={cartItems.length === 0 || cartItems.some(i => typeof i.stock === 'number' && i.stock === 0 && !i.isPreorder)}
+            style={cartItems.length === 0 || cartItems.some(i => typeof i.stock === 'number' && i.stock === 0 && !i.isPreorder) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Proceed to Checkout
           </button>
