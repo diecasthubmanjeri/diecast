@@ -696,7 +696,228 @@
 }
 
 .btnBestsellerInactive:hover {
+}
+
+.offerPreviewCard {
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+  border: 1px dashed #38bdf8;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.offerPreviewIcon {
+  font-size: 28px;
+}
+
+.offerPreviewContent {
+  flex: 1;
+}
+
+.offerPreviewTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 2px;
+}
+
+.offerPreviewDesc {
+  font-size: 12px;
+  color: #0f766e;
+}
+
+.statusActiveBadge {
+  background-color: #dcfce7;
+  color: #15803d;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusInactiveBadge {
+  background-color: #f1f5f9;
+  color: #64748b;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------------- BEST SELLING SECTION ---------------- */
+.analyticsSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.analyticsKpiCard {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.kpiIconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: var(--color-very-light-blue);
+  color: var(--color-deep-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.kpiContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpiLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-secondary-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpiValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-dark-navy);
+  margin-top: 2px;
+}
+
+.kpiSubtext {
+  font-size: 11px;
+  color: var(--color-primary-light-blue);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.clientBadge {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+}
+
+.clientBadgeZero {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rankBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-very-light-blue);
+  color: var(--color-deep-blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.rankTopOne {
+  background: #fef08a;
+  color: #854d0e;
+  box-shadow: 0 2px 6px rgba(202, 138, 4, 0.2);
+}
+
+.rankTopTwo {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.rankTopThree {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.btnBestsellerActive {
+  padding: 4px 8px;
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnBestsellerInactive {
+  padding: 4px 8px;
+  background-color: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnBestsellerInactive:hover {
   background-color: #f1f5f9;
   color: #1e293b;
 }
 
+.twoColumnLayout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .twoColumnLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formColumn {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  height: fit-content;
+}
+
+.listColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

@@ -1580,78 +1580,90 @@ export default function AdminDashboard() {
       )}
 
       {activeTab === 'news' && (
-        <div className={`${styles.main} ${editingNews ? styles.mainEditing : ''}`}>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Announcement Text</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {newsList.map((item, idx) => (
-                  <tr key={`adm-n-${item.id || idx}`}>
-                    <td style={{ fontWeight: 500 }}>{item.text}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button className={styles.btnEdit} onClick={() => handleEditNews(item)}>Edit</button>
-                        <button className={styles.btnEdit} onClick={() => handleDeleteNews(item.id)} style={{ backgroundColor: '#e74c3c' }}>Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {newsList.length === 0 && (
-                  <tr>
-                    <td colSpan={2} style={{ textAlign: 'center', padding: '24px' }}>No announcements found. Add one!</td>
-                  </tr>
+        <div className={styles.twoColumnLayout}>
+          <div className={styles.formColumn}>
+            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>{editingNews && editingNews.text ? 'Edit Announcement' : 'Add Announcement'}</h2>
+            <form onSubmit={handleSaveNews} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Announcement Text</label>
+                <input 
+                  type="text" 
+                  name="text" 
+                  className={styles.input} 
+                  value={editingNews ? editingNews.text : ''} 
+                  onChange={handleNewsChange} 
+                  placeholder="e.g. New Arrivals this Friday!"
+                  required 
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <button type="submit" className={styles.btnAdd} style={{ flex: 1 }}>{editingNews && editingNews.text ? 'Update Announcement' : 'Add Announcement'}</button>
+                {editingNews && editingNews.text && (
+                  <button type="button" className={styles.btnEdit} onClick={handleCancelEditNews} style={{ flex: 1 }}>Cancel</button>
                 )}
-              </tbody>
-            </table>
+              </div>
+            </form>
           </div>
-
-          {editingNews && (
-            <div className={styles.modalOverlay}>
-              <div className={styles.formContainer}>
-              <div className={styles.formTitle}>
-                <span>{newsList.find(n => n.id === editingNews.id) ? 'Edit Announcement' : 'Add Announcement'}</span>
-                <button className={styles.btnClose} onClick={handleCancelEditNews}>×</button>
-              </div>
-              
-              <form onSubmit={handleSaveNews}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Announcement Text</label>
-                  <input type="text" name="text" className={styles.input} value={editingNews.text} onChange={handleNewsChange} required />
-                </div>
-                <button type="submit" className={styles.btnSave}>Save Announcement</button>
-              </form>
-              </div>
+          
+          <div className={styles.listColumn}>
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Announcement Text</th>
+                    <th style={{ width: '120px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {newsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>No announcements found. Add one!</td>
+                    </tr>
+                  ) : newsList.map((item, idx) => (
+                    <tr key={`adm-n-${item.id || idx}`}>
+                      <td style={{ fontWeight: 500 }}>{item.text}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button className={styles.btnEdit} onClick={() => handleEditNews(item)}>Edit</button>
+                          <button className={styles.btnEdit} onClick={() => handleDeleteNews(item.id)} style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
         </div>
       )}
 
       {activeTab === 'brand' && (
-        <div className={styles.main}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', width: '100%', backgroundColor: '#fff', padding: '32px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>{editingBrandName ? 'Edit Brand' : 'Manage Brands'}</h2>
-            <form onSubmit={editingBrandName ? handleUpdateBrand : handleAddBrand} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              <input 
-                type="text" 
-                className={styles.input} 
-                placeholder="Brand Name" 
-                value={newBrandName}
-                onChange={(e) => setNewBrandName(e.target.value)}
-                required
-              />
-              <input 
-                type="file" 
-                accept="image/*"
-                className={styles.input}
-                onChange={handleBrandLogoUpload}
-              />
+        <div className={styles.twoColumnLayout}>
+          <div className={styles.formColumn}>
+            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>{editingBrandName ? 'Edit Brand' : 'Add New Brand'}</h2>
+            <form onSubmit={editingBrandName ? handleUpdateBrand : handleAddBrand} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Brand Name</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  placeholder="e.g. Hot Wheels" 
+                  value={newBrandName}
+                  onChange={(e) => setNewBrandName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Brand Logo</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  className={styles.input}
+                  onChange={handleBrandLogoUpload}
+                />
+              </div>
               {newBrandLogo && (
-                <div style={{ position: 'relative', display: 'inline-block', alignSelf: 'flex-start' }}>
+                <div style={{ position: 'relative', display: 'inline-block', alignSelf: 'flex-start', border: '1px solid #eaeaea', padding: '4px', borderRadius: '8px' }}>
                   <img src={newBrandLogo} alt="Logo preview" style={{ height: '40px', objectFit: 'contain' }} />
                   <button
                     type="button"
@@ -1660,12 +1672,12 @@ export default function AdminDashboard() {
                       position: 'absolute',
                       top: '-6px',
                       right: '-6px',
-                      background: '#e74c3c',
+                      background: '#ef4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '50%',
-                      width: '18px',
-                      height: '18px',
+                      width: '20px',
+                      height: '20px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1679,74 +1691,92 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-start' }}>
-                <button type="submit" className={styles.btnAdd}>{editingBrandName ? 'Update Brand' : 'Add Brand'}</button>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <button type="submit" className={styles.btnAdd} style={{ flex: 1 }}>{editingBrandName ? 'Update Brand' : 'Add Brand'}</button>
                 {editingBrandName && (
-                  <button type="button" className={styles.btnEdit} onClick={handleCancelBrandEdit}>Cancel</button>
+                  <button type="button" className={styles.btnEdit} onClick={handleCancelBrandEdit} style={{ flex: 1 }}>Cancel</button>
                 )}
               </div>
             </form>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Logo</th>
-                  <th>Brand Name</th>
-                  <th style={{ width: '80px' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {localBrands.map((b, idx) => (
-                  <tr key={`adm-b-${b.name || idx}`}>
-                    <td>
-                      {b.logo ? (
-                        <img src={b.logo} alt={b.name} style={{ height: '30px', objectFit: 'contain' }} />
-                      ) : (
-                        <span style={{ color: '#999', fontSize: '12px' }}>No Logo</span>
-                      )}
-                    </td>
-                    <td>{b.name}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button className={styles.btnEdit} onClick={() => handleEditBrandClick(b)}>Edit</button>
-                        <button className={styles.btnEdit} onClick={() => handleDeleteBrand(b.name)} style={{ backgroundColor: '#e74c3c' }}>Delete</button>
-                      </div>
-                    </td>
+          </div>
+          
+          <div className={styles.listColumn}>
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Logo</th>
+                    <th>Brand Name</th>
+                    <th style={{ width: '120px' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {localBrands.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>No brands added yet.</td>
+                    </tr>
+                  ) : localBrands.map((b, idx) => (
+                    <tr key={`adm-b-${b.name || idx}`}>
+                      <td>
+                        {b.logo ? (
+                          <img src={b.logo} alt={b.name} style={{ height: '30px', objectFit: 'contain' }} />
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>No Logo</span>
+                        )}
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{b.name}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button className={styles.btnEdit} onClick={() => handleEditBrandClick(b)}>Edit</button>
+                          <button className={styles.btnEdit} onClick={() => handleDeleteBrand(b.name)} style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'category' && (
-        <div className={styles.main}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', width: '100%', backgroundColor: '#fff', padding: '32px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>{editingCategoryName ? 'Edit Category' : 'Manage Categories'}</h2>
-            <form onSubmit={editingCategoryName ? handleUpdateCategory : handleAddCategory} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              <input 
-                type="text" 
-                className={styles.input} 
-                placeholder="Category Name" 
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                required
-              />
-              <input 
-                type="text" 
-                className={styles.input} 
-                placeholder="Category Subtitle (e.g. CHOOSE YOUR DISCIPLINE)" 
-                value={newCategorySubtitle}
-                onChange={(e) => setNewCategorySubtitle(e.target.value)}
-              />
-              <input 
-                type="file" 
-                accept="image/*"
-                className={styles.input}
-                onChange={handleCategoryImageUpload}
-              />
+        <div className={styles.twoColumnLayout}>
+          <div className={styles.formColumn}>
+            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>{editingCategoryName ? 'Edit Category' : 'Add New Category'}</h2>
+            <form onSubmit={editingCategoryName ? handleUpdateCategory : handleAddCategory} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Category Name</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  placeholder="e.g. Supercars" 
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Subtitle (Optional)</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  placeholder="e.g. Master the track" 
+                  value={newCategorySubtitle}
+                  onChange={(e) => setNewCategorySubtitle(e.target.value)}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Category Image</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  className={styles.input}
+                  onChange={handleCategoryImageUpload}
+                />
+              </div>
               {newCategoryImage && (
-                <div style={{ position: 'relative', display: 'inline-block', alignSelf: 'flex-start' }}>
+                <div style={{ position: 'relative', display: 'inline-block', alignSelf: 'flex-start', border: '1px solid #eaeaea', padding: '4px', borderRadius: '8px' }}>
                   <img src={newCategoryImage} alt="Image preview" style={{ height: '40px', objectFit: 'contain' }} />
                   <button
                     type="button"
@@ -1755,12 +1785,12 @@ export default function AdminDashboard() {
                       position: 'absolute',
                       top: '-6px',
                       right: '-6px',
-                      background: '#e74c3c',
+                      background: '#ef4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '50%',
-                      width: '18px',
-                      height: '18px',
+                      width: '20px',
+                      height: '20px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1774,79 +1804,103 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-start' }}>
-                <button type="submit" className={styles.btnAdd}>{editingCategoryName ? 'Update Category' : 'Add Category'}</button>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <button type="submit" className={styles.btnAdd} style={{ flex: 1 }}>{editingCategoryName ? 'Update Category' : 'Add Category'}</button>
                 {editingCategoryName && (
-                  <button type="button" className={styles.btnEdit} onClick={handleCancelCategoryEdit}>Cancel</button>
+                  <button type="button" className={styles.btnEdit} onClick={handleCancelCategoryEdit} style={{ flex: 1 }}>Cancel</button>
                 )}
               </div>
             </form>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Image</th>
-                  <th>Category Name</th>
-                  <th style={{ width: '80px' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {localCategories.map((c, idx) => (
-                  <tr key={`adm-c-${c.name || idx}`}>
-                    <td>
-                      {c.image ? (
-                        <TransparentCategoryImg src={c.image} alt={c.name} style={{ height: '30px', objectFit: 'contain' }} />
-                      ) : (
-                        <span style={{ color: '#999', fontSize: '12px' }}>No Image</span>
-                      )}
-                    </td>
-                    <td>{c.name}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button className={styles.btnEdit} onClick={() => handleEditCategoryClick(c)}>Edit</button>
-                        <button className={styles.btnEdit} onClick={() => handleDeleteCategory(c.name)} style={{ backgroundColor: '#e74c3c' }}>Delete</button>
-                      </div>
-                    </td>
+          </div>
+          
+          <div className={styles.listColumn}>
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Category Name</th>
+                    <th style={{ width: '120px' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {localCategories.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>No categories added yet.</td>
+                    </tr>
+                  ) : localCategories.map((c, idx) => (
+                    <tr key={`adm-c-${c.name || idx}`}>
+                      <td>
+                        {c.image ? (
+                          <TransparentCategoryImg src={c.image} alt={c.name} style={{ height: '30px', objectFit: 'contain' }} />
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>No Image</span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{c.name}</div>
+                        {c.subtitle && <div style={{ fontSize: '11px', color: '#64748b' }}>{c.subtitle}</div>}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button className={styles.btnEdit} onClick={() => handleEditCategoryClick(c)}>Edit</button>
+                          <button className={styles.btnEdit} onClick={() => handleDeleteCategory(c.name)} style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'scale' && (
-        <div className={styles.main}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', width: '100%', backgroundColor: '#fff', padding: '32px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>Manage Scales</h2>
-            <form onSubmit={handleAddScale} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <input 
-                type="text" 
-                className={styles.input} 
-                placeholder="New Scale (e.g. 1:12)" 
-                value={newScale}
-                onChange={(e) => setNewScale(e.target.value)}
-                required
-              />
-              <button type="submit" className={styles.btnAdd}>Add</button>
+        <div className={styles.twoColumnLayout}>
+          <div className={styles.formColumn}>
+            <h2 className={styles.title} style={{ fontSize: '20px', marginBottom: '16px' }}>Add New Scale</h2>
+            <form onSubmit={handleAddScale} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Scale Value</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  placeholder="e.g. 1:12" 
+                  value={newScale}
+                  onChange={(e) => setNewScale(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit" className={styles.btnAdd} style={{ marginTop: '12px' }}>Add Scale</button>
             </form>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Scale Name</th>
-                  <th style={{ width: '80px' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {localScales.map((s, idx) => (
-                  <tr key={`adm-s-${s || idx}`}>
-                    <td>{s}</td>
-                    <td>
-                      <button className={styles.btnEdit} onClick={() => handleDeleteScale(s)} style={{ backgroundColor: '#e74c3c' }}>Delete</button>
-                    </td>
+          </div>
+          
+          <div className={styles.listColumn}>
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Scale Name</th>
+                    <th style={{ width: '120px' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {localScales.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>No scales added yet.</td>
+                    </tr>
+                  ) : localScales.map((s, idx) => (
+                    <tr key={`adm-s-${s || idx}`}>
+                      <td style={{ fontWeight: 600 }}>{s}</td>
+                      <td>
+                        <button className={styles.btnEdit} onClick={() => handleDeleteScale(s)} style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
