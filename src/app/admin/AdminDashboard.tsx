@@ -1015,101 +1015,161 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className={styles.adminLayout}>
-      <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.sidebarOpen : ''}`}>
-        <div className={styles.sidebarHeader}>
-          <h2 className={styles.sidebarTitle}>Admin Panel</h2>
-          <button className={styles.closeSidebarBtn} onClick={() => setIsMobileMenuOpen(false)}>&times;</button>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <h1 className={styles.title}>Admin Dashboard</h1>
+          <div className={styles.soundAlertControls}>
+            <span className={styles.orderLivePill}>
+              <span className={styles.pulseDot}></span>
+              Live Alerts
+            </span>
+            <button 
+              type="button" 
+              className={`${styles.btnSoundToggle} ${isSoundMuted ? styles.btnSoundMuted : ''}`} 
+              onClick={() => {
+                const nextState = !isSoundMuted;
+                setIsSoundMuted(nextState);
+                toast(nextState ? '🔇 Order sound muted' : '🔊 Order sound unmuted');
+              }}
+              title={isSoundMuted ? "Sound muted. Click to enable" : "Sound active. Click to mute"}
+            >
+              {isSoundMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
+            </button>
+            <button
+              type="button"
+              className={styles.btnSoundToggle}
+              style={{
+                background: notificationPermission === 'granted' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                borderColor: notificationPermission === 'granted' ? '#22c55e' : '#3b82f6',
+                color: notificationPermission === 'granted' ? '#22c55e' : '#60a5fa',
+              }}
+              onClick={requestNotificationPermission}
+              title="Click to enable or test device/phone notification bar alerts"
+            >
+              {notificationPermission === 'granted' ? '🔔 Device Alerts: ACTIVE' : '🔔 Enable Notification Bar'}
+            </button>
+          </div>
         </div>
-        <nav className={styles.sidebarNav}>
-          <button className={`${styles.tab} ${activeTab === 'inventory' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); setEditingNews(null); }}>📦 Inventory</button>
-          <button className={`${styles.tab} ${activeTab === 'orders' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('orders'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>🛒 Orders</button>
-          <button className={`${styles.tab} ${activeTab === 'brand' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('brand'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>🏷️ Brand</button>
-          <button className={`${styles.tab} ${activeTab === 'category' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('category'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>📂 Category</button>
-          <button className={`${styles.tab} ${activeTab === 'scale' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('scale'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>⚖️ Scale</button>
-          <button className={`${styles.tab} ${activeTab === 'news' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('news'); setIsMobileMenuOpen(false); setEditingProduct(null); }}>📰 News</button>
-          <button className={`${styles.tab} ${activeTab === 'notifications' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('notifications'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>🔔 Notifications</button>
-          <button className={`${styles.tab} ${activeTab === 'bestselling' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('bestselling'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>🔥 Best selling</button>
-          <button className={`${styles.tab} ${activeTab === 'offer' ? styles.tabActive : ''}`} onClick={() => { setActiveTab('offer'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>🎁 Offer</button>
-        </nav>
-      </aside>
-      {isMobileMenuOpen && <div className={styles.sidebarOverlay} onClick={() => setIsMobileMenuOpen(false)}></div>}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {activeTab === 'inventory' && (
+            <button className={styles.btnAdd} onClick={handleAddProduct}>+ Add Product</button>
+          )}
+          {activeTab === 'news' && (
+            <button className={styles.btnAdd} onClick={handleAddNews}>+ Add News</button>
+          )}
+          <button 
+            type="button" 
+            onClick={handleLogout}
+            style={{
+              padding: '8px 14px',
+              backgroundColor: '#fee2e2',
+              color: '#dc2626',
+              border: '1px solid #fca5a5',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+            title="Log out of Admin Dashboard"
+          >
+            🔒 Log Out
+          </button>
+        </div>
+      </div>
 
-      <main className={styles.mainContent}>
-        <div className={styles.header}>
-          <div className={styles.titleWrapper}>
-            <button className={styles.hamburgerBtn} onClick={() => setIsMobileMenuOpen(true)}>☰</button>
-            <h1 className={styles.title}>
-              {activeTab === 'inventory' && 'Inventory Management'}
-              {activeTab === 'orders' && 'Orders Dashboard'}
-              {activeTab === 'brand' && 'Brands'}
-              {activeTab === 'category' && 'Categories'}
-              {activeTab === 'scale' && 'Scales'}
-              {activeTab === 'news' && 'News & Announcements'}
-              {activeTab === 'notifications' && 'Notifications Settings'}
-              {activeTab === 'bestselling' && 'Best Selling Analytics'}
-              {activeTab === 'offer' && 'Store Offers'}
-            </h1>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <div className={styles.soundAlertControls}>
-              <span className={styles.orderLivePill}>
-                <span className={styles.pulseDot}></span>
-                Live Alerts
-              </span>
-              <button 
-                type="button" 
-                className={`${styles.btnSoundToggle} ${isSoundMuted ? styles.btnSoundMuted : ''}`} 
-                onClick={() => {
-                  const nextState = !isSoundMuted;
-                  setIsSoundMuted(nextState);
-                  toast(nextState ? '🔇 Order sound muted' : '🔊 Order sound unmuted');
-                }}
-                title={isSoundMuted ? "Sound muted. Click to enable" : "Sound active. Click to mute"}
-              >
-                {isSoundMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
-              </button>
-              <button
-                type="button"
-                className={styles.btnSoundToggle}
-                style={{
-                  background: notificationPermission === 'granted' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                  borderColor: notificationPermission === 'granted' ? '#22c55e' : '#3b82f6',
-                  color: notificationPermission === 'granted' ? '#22c55e' : '#60a5fa',
-                }}
-                onClick={requestNotificationPermission}
-                title="Click to enable or test device/phone notification bar alerts"
-              >
-                {notificationPermission === 'granted' ? '🔔 Device Alerts: ACTIVE' : '🔔 Enable Notification Bar'}
-              </button>
+      <div className={styles.tabsWrapper}>
+        {/* Mobile Dropdown Button */}
+        <div className={styles.mobileTabWrapper}>
+          <button 
+            className={styles.mobileTabButton} 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {activeTab === 'inventory' && 'Inventory'}
+            {activeTab === 'orders' && 'Orders'}
+            {activeTab === 'brand' && 'Brand'}
+            {activeTab === 'category' && 'Category'}
+            {activeTab === 'scale' && 'Scale'}
+            {activeTab === 'news' && 'News'}
+            {activeTab === 'notifications' && 'Notifications'}
+            {activeTab === 'bestselling' && 'Best selling'}
+            {activeTab === 'offer' && 'Offer'}
+            <span className={styles.dropdownIcon}>{isMobileMenuOpen ? '▲' : '▼'}</span>
+          </button>
+          
+          {isMobileMenuOpen && (
+            <div className={styles.mobileDropdown}>
+              <button className={`${styles.dropdownItem} ${activeTab === 'inventory' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); setEditingNews(null); }}>Inventory</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'orders' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('orders'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Orders</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'brand' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('brand'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Brand</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'category' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('category'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Category</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'scale' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('scale'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Scale</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'news' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('news'); setIsMobileMenuOpen(false); setEditingProduct(null); }}>News</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'notifications' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('notifications'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Notifications</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'bestselling' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('bestselling'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Best selling</button>
+              <button className={`${styles.dropdownItem} ${activeTab === 'offer' ? styles.dropdownItemActive : ''}`} onClick={() => { setActiveTab('offer'); setIsMobileMenuOpen(false); setEditingProduct(null); setEditingNews(null); }}>Offer</button>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {activeTab === 'inventory' && (
-                <button className={styles.btnAdd} onClick={handleAddProduct}>+ Add Product</button>
-              )}
-              {activeTab === 'news' && (
-                <button className={styles.btnAdd} onClick={handleAddNews}>+ Add News</button>
-              )}
-              <button 
-                type="button" 
-                onClick={handleLogout}
-                style={{
-                  padding: '8px 14px',
-                  backgroundColor: '#fee2e2',
-                  color: '#dc2626',
-                  border: '1px solid #fca5a5',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-                title="Log out of Admin Dashboard"
-              >
-                🔒 Log Out
-              </button>
-            </div>
-          </div>
+          )}
         </div>
+
+        {/* Desktop Tabs */}
+        <div className={styles.tabs}>
+          <button 
+            className={`${styles.tab} ${activeTab === 'inventory' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('inventory'); setEditingNews(null); }}
+          >
+            Inventory
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'orders' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('orders'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Orders
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'brand' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('brand'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Brand
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'category' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('category'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Category
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'scale' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('scale'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Scale
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'news' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('news'); setEditingProduct(null); }}
+          >
+            News
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'notifications' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('notifications'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Notifications
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'bestselling' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('bestselling'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Best selling
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'offer' ? styles.tabActive : ''}`}
+            onClick={() => { setActiveTab('offer'); setEditingProduct(null); setEditingNews(null); }}
+          >
+            Offer
+          </button>
+        </div>
+      </div>
 
       {activeTab === 'inventory' && (
         <div className={`${styles.main} ${editingProduct ? styles.mainEditing : ''}`}>
@@ -2559,7 +2619,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-      </main>
     </div>
   );
 }
