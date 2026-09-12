@@ -8,6 +8,7 @@ import {
   apiDeleteProduct,
   apiGetBrands,
   apiSaveBrand,
+  apiUpdateBrand,
   apiDeleteBrand,
   apiGetCategories,
   apiSaveCategory,
@@ -848,7 +849,7 @@ export default function AdminDashboard() {
     if (trimmedName) {
       const toastId = toast.loading('Updating brand...');
       try {
-        const saved = await apiSaveBrand({ name: trimmedName, logo: newBrandLogo });
+        const saved = await apiUpdateBrand(editingBrandName, { name: trimmedName, logo: newBrandLogo });
         if (saved) {
           setLocalBrands(prev => prev.map(b => b.name === editingBrandName ? saved : b));
           if (trimmedName !== editingBrandName) {

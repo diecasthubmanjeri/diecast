@@ -31,10 +31,19 @@ export async function PUT(
       query,
       { $set: { ...(body.name && { name: body.name.trim() }), ...(body.logo !== undefined && { logo: body.logo }) } },
       { new: true }
-    );
+    ).lean();
 
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Brand not found' }, { status: 404 });
+    }
+
+    clearCache('brands_');
+    try {
+      const { revalidatePath } = require('next/cache');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+    } catch (e) {
+      console.warn(e);
     }
 
     return NextResponse.json({ success: true, data: updated });
@@ -71,6 +80,14 @@ export async function DELETE(
     }
 
     clearCache('brands_');
+    try {
+      const { revalidatePath } = require('next/cache');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+    } catch (e) {
+      console.warn(e);
+    }
+
     return NextResponse.json({ success: true, message: 'Brand deleted successfully' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error deleting brand';

@@ -226,6 +226,23 @@ export async function apiSaveBrand(brand: { name: string; logo?: string }): Prom
   }
 }
 
+export async function apiUpdateBrand(originalName: string, brand: { name?: string; logo?: string }): Promise<Brand | null> {
+  try {
+    const res = await fetch(`/api/brands/${encodeURIComponent(originalName)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(brand),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to update brand');
+    clearClientMemoryCache();
+    return data.data;
+  } catch (err) {
+    console.error('[API update brand error]', err);
+    throw err;
+  }
+}
+
 export async function apiDeleteBrand(name: string): Promise<boolean> {
   try {
     const res = await fetch(`/api/brands/${encodeURIComponent(name)}`, { method: 'DELETE' });

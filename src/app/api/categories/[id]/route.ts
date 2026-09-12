@@ -37,10 +37,19 @@ export async function PUT(
         },
       },
       { new: true }
-    );
+    ).lean();
 
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+    }
+
+    clearCache('categories_');
+    try {
+      const { revalidatePath } = require('next/cache');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+    } catch (e) {
+      console.warn(e);
     }
 
     return NextResponse.json({ success: true, data: updated });
@@ -77,6 +86,14 @@ export async function DELETE(
     }
 
     clearCache('categories_');
+    try {
+      const { revalidatePath } = require('next/cache');
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+    } catch (e) {
+      console.warn(e);
+    }
+
     return NextResponse.json({ success: true, message: 'Category deleted successfully' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error deleting category';
