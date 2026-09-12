@@ -11,7 +11,7 @@ type AuthMode = 'login' | 'forgot_step1' | 'forgot_step2';
 
 export default function AdminLogin({ onSuccess }: AdminLoginProps) {
   // Login states
-  const [identifier, setIdentifier] = useState('diecasthubmanjeri');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

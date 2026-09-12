@@ -1017,6 +1017,31 @@ export default function AdminDashboard() {
 
   return (
     <div className={styles.container}>
+      {/* Top right logout */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+        <button 
+          type="button" 
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            backgroundColor: '#fee2e2',
+            color: '#dc2626',
+            border: '1px solid #fca5a5',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            transition: 'all 0.2s ease',
+          }}
+          title="Log out of Admin Dashboard"
+        >
+          🔒 Log Out
+        </button>
+      </div>
       <div className={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <h1 className={styles.title}>Admin Dashboard</h1>
@@ -1059,28 +1084,6 @@ export default function AdminDashboard() {
           {activeTab === 'news' && (
             <button className={styles.btnAdd} onClick={handleAddNews}>+ Add News</button>
           )}
-          <button 
-            type="button" 
-            onClick={handleLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              backgroundColor: '#fee2e2',
-              color: '#dc2626',
-              border: '1px solid #fca5a5',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease',
-            }}
-            title="Log out of Admin Dashboard"
-          >
-            🔒 Log Out
-          </button>
         </div>
       </div>
 
