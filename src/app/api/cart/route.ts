@@ -18,9 +18,12 @@ export async function GET(req: NextRequest) {
     if (!db) {
       const items = getFallbackCart(sessionId);
       const fallbackProds = getFallbackProducts();
-      const enriched = items.map((item) => {
-        const prod = fallbackProds.find((p) => p.id === item.id || p.slug === item.id);
-        const liveStock = prod ? (prod.isPreorder ? 99 : Math.max(0, prod.stock)) : (item.stock ?? 99);
+      
+      const validItems = items.filter(item => fallbackProds.some(p => p.id === item.id || p.slug === item.id));
+      
+      const enriched = validItems.map((item) => {
+        const prod = fallbackProds.find((p) => p.id === item.id || p.slug === item.id)!;
+        const liveStock = prod.isPreorder ? 99 : Math.max(0, prod.stock);
         const finalQty = liveStock > 0 ? Math.min(item.quantity, liveStock) : item.quantity;
         return {
           ...item,
@@ -28,7 +31,11 @@ export async function GET(req: NextRequest) {
           stock: liveStock,
         };
       });
-      saveFallbackCart(sessionId, enriched);
+      
+      if (validItems.length !== items.length || enriched.some((e, i) => e.quantity !== validItems[i].quantity)) {
+        saveFallbackCart(sessionId, enriched);
+      }
+      
       const res = NextResponse.json({ success: true, items: enriched, source: 'fallback' });
       if (isNew) attachSessionCookie(res, sessionId);
       return res;
@@ -43,10 +50,17 @@ export async function GET(req: NextRequest) {
 
     let cartModified = false;
     const enrichedItems = [];
+    const validCartItems = [];
 
     for (const item of cart.items) {
       const product = await ProductModel.findOne({ $or: [{ id: item.id }, { slug: item.id }] }).lean();
-      const liveStock = product ? (product.isPreorder ? 99 : Math.max(0, product.stock)) : (item.stock ?? 99);
+      
+      if (!product) {
+        cartModified = true;
+        continue;
+      }
+
+      const liveStock = product.isPreorder ? 99 : Math.max(0, product.stock);
       let finalQty = item.quantity;
       if (liveStock > 0 && finalQty > liveStock) {
         finalQty = liveStock;
@@ -54,6 +68,8 @@ export async function GET(req: NextRequest) {
         cartModified = true;
       }
       item.stock = liveStock;
+      
+      validCartItems.push(item);
       enrichedItems.push({
         id: item.id,
         name: item.name,
@@ -67,6 +83,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (cartModified) {
+      cart.items = validCartItems;
       await cart.save();
     }
 

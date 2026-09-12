@@ -138,6 +138,15 @@ export async function DELETE(
     }
 
     clearCache('products_');
+    try {
+      revalidatePath('/', 'page');
+      revalidatePath('/catalog', 'page');
+      revalidatePath('/product/[slug]', 'page');
+      revalidatePath(`/product/${id}`, 'page');
+    } catch (revalErr) {
+      console.warn('[Revalidation Warning]:', revalErr);
+    }
+
     return NextResponse.json({ success: true, message: 'Product deleted successfully', count: result.deletedCount });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error deleting product';
