@@ -717,6 +717,7 @@ export default function AdminDashboard() {
       toast.error(msg, { id: toastId });
     } finally {
       setIsUploadingImage(false);
+      e.target.value = '';
     }
   };
 
@@ -792,6 +793,8 @@ export default function AdminDashboard() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       toast.error(msg, { id: toastId });
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -806,6 +809,8 @@ export default function AdminDashboard() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       toast.error(msg, { id: toastId });
+    } finally {
+      e.target.value = '';
     }
   };
 
