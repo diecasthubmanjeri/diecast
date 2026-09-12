@@ -921,3 +921,103 @@
   flex-direction: column;
   gap: 16px;
 }
+
+/* Orders Modern Toolbar */
+.ordersToolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background: var(--color-white, #ffffff);
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.ordersSearchWrapper {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+  max-width: 400px;
+}
+
+.ordersSearchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  font-size: 16px;
+}
+
+.ordersSearchInput {
+  width: 100%;
+  padding: 10px 16px 10px 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.ordersSearchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.ordersSearchInput::placeholder {
+  color: #94a3b8;
+}
+
+.ordersFilterTabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.ordersFilterTab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  background: transparent;
+  color: #64748b;
+  position: relative;
+}
+
+.ordersFilterTab:hover {
+  color: #334155;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.ordersFilterTabActive {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.ordersCountText {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -273,6 +273,23 @@ export async function apiSaveCategory(cat: { name: string; image: string; subtit
   }
 }
 
+export async function apiUpdateCategory(originalName: string, cat: { name?: string; image?: string; subtitle?: string }): Promise<Category | null> {
+  try {
+    const res = await fetch(`/api/categories/${encodeURIComponent(originalName)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cat),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to update category');
+    clearClientMemoryCache();
+    return data.data;
+  } catch (err) {
+    console.error('[API update category error]', err);
+    throw err;
+  }
+}
+
 export async function apiDeleteCategory(name: string): Promise<boolean> {
   try {
     const res = await fetch(`/api/categories/${encodeURIComponent(name)}`, { method: 'DELETE' });

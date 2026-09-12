@@ -11,6 +11,7 @@ import {
   apiDeleteBrand,
   apiGetCategories,
   apiSaveCategory,
+  apiUpdateCategory,
   apiDeleteCategory,
   apiGetScales,
   apiAddScale,
@@ -929,7 +930,7 @@ export default function AdminDashboard() {
     if (trimmedName) {
       const toastId = toast.loading('Updating category...');
       try {
-        const saved = await apiSaveCategory({
+        const saved = await apiUpdateCategory(editingCategoryName, {
           name: trimmedName,
           image: newCategoryImage,
           subtitle: newCategorySubtitle,
@@ -1062,14 +1063,19 @@ export default function AdminDashboard() {
             type="button" 
             onClick={handleLogout}
             style={{
-              padding: '8px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
               backgroundColor: '#fee2e2',
               color: '#dc2626',
               border: '1px solid #fca5a5',
               borderRadius: '8px',
               fontSize: '13px',
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s ease',
             }}
             title="Log out of Admin Dashboard"
           >
@@ -1908,48 +1914,40 @@ export default function AdminDashboard() {
       {activeTab === 'orders' && (
         <div className={styles.main}>
           {/* Fast Search & Status Filter Toolbar */}
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
+          <div className={styles.ordersToolbar}>
+            <div className={styles.ordersSearchWrapper}>
+              <span className={styles.ordersSearchIcon}>🔍</span>
               <input
                 type="text"
-                placeholder="🔍 Search by ID, customer name, phone, city..."
+                placeholder="Search by ID, customer name, phone, city..."
                 value={orderSearch}
                 onChange={(e) => {
                   setOrderSearch(e.target.value);
                   setOrderPage(1);
                 }}
-                className={styles.input}
-                style={{ maxWidth: '340px', padding: '8px 12px' }}
+                className={styles.ordersSearchInput}
               />
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                {['ALL', 'Pending', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => {
-                      setOrderStatusFilter(st);
-                      setOrderPage(1);
-                    }}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      border: orderStatusFilter === st ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                      backgroundColor: orderStatusFilter === st ? '#eff6ff' : '#ffffff',
-                      color: orderStatusFilter === st ? '#1d4ed8' : '#64748b',
-                      fontWeight: orderStatusFilter === st ? 700 : 500,
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {st === 'ALL'
-                      ? `All (${orders.length})`
-                      : `${st} (${orders.filter((o) => o.status === st).length})`}
-                  </button>
-                ))}
-              </div>
             </div>
-            <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+            
+            <div className={styles.ordersFilterTabs}>
+              {['ALL', 'Pending', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => {
+                    setOrderStatusFilter(st);
+                    setOrderPage(1);
+                  }}
+                  className={`${styles.ordersFilterTab} ${orderStatusFilter === st ? styles.ordersFilterTabActive : ''}`}
+                >
+                  {st === 'ALL'
+                    ? `All (${orders.length})`
+                    : `${st} (${orders.filter((o) => o.status === st).length})`}
+                </button>
+              ))}
+            </div>
+            
+            <div className={styles.ordersCountText}>
               Showing {paginatedOrders.length} of {filteredOrders.length} order{filteredOrders.length === 1 ? '' : 's'}
             </div>
           </div>
