@@ -1195,7 +1195,7 @@ export default function AdminDashboard() {
               />
               <select
                 className={styles.select}
-                style={{ width: 'auto', padding: '8px 12px' }}
+                style={{ width: '160px', padding: '8px 12px' }}
                 value={productBrandFilter}
                 onChange={(e) => {
                   setProductBrandFilter(e.target.value);
@@ -1211,7 +1211,7 @@ export default function AdminDashboard() {
               </select>
               <select
                 className={styles.select}
-                style={{ width: 'auto', padding: '8px 12px' }}
+                style={{ width: '160px', padding: '8px 12px' }}
                 value={productCategoryFilter}
                 onChange={(e) => {
                   setProductCategoryFilter(e.target.value);
