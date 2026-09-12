@@ -1183,22 +1183,25 @@ export default function AdminDashboard() {
       {activeTab === 'inventory' && (
         <div className={`${styles.main} ${editingProduct ? styles.mainEditing : ''}`}>
           {/* Fast Search & Filter Toolbar */}
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
+          <div className={styles.ordersToolbar}>
+            <div className={styles.ordersSearchWrapper}>
+              <span className={styles.ordersSearchIcon}>🔍</span>
               <input
                 type="text"
-                placeholder="🔍 Search products by name, brand, scale..."
+                placeholder="Search products by name, brand, scale..."
                 value={productSearch}
                 onChange={(e) => {
                   setProductSearch(e.target.value);
                   setProductPage(1);
                 }}
-                className={styles.input}
-                style={{ maxWidth: '340px', padding: '8px 12px' }}
+                className={styles.ordersSearchInput}
               />
+            </div>
+            
+            <div className={styles.inventoryFilters}>
               <select
-                className={styles.select}
-                style={{ width: '160px', padding: '8px 12px' }}
+                className={styles.ordersSearchInput}
+                style={{ width: '160px', cursor: 'pointer' }}
                 value={productBrandFilter}
                 onChange={(e) => {
                   setProductBrandFilter(e.target.value);
@@ -1213,8 +1216,8 @@ export default function AdminDashboard() {
                 ))}
               </select>
               <select
-                className={styles.select}
-                style={{ width: '160px', padding: '8px 12px' }}
+                className={styles.ordersSearchInput}
+                style={{ width: '160px', cursor: 'pointer' }}
                 value={productCategoryFilter}
                 onChange={(e) => {
                   setProductCategoryFilter(e.target.value);
@@ -1229,7 +1232,8 @@ export default function AdminDashboard() {
                 ))}
               </select>
             </div>
-            <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+
+            <div className={styles.ordersCountText}>
               Showing {paginatedProducts.length} of {filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'}
             </div>
           </div>

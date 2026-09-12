@@ -1021,3 +1021,20 @@
   align-items: center;
   gap: 6px;
 }
+
+.inventoryFilters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 600px) {
+  .inventoryFilters {
+    width: 100%;
+  }
+  .inventoryFilters > select {
+    flex: 1;
+    min-width: 0;
+    width: auto !important;
+  }
+}
