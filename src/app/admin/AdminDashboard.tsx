@@ -778,6 +778,8 @@ export default function AdminDashboard() {
     const { name, value } = e.target;
     if (editingNews) {
       setEditingNews({ ...editingNews, [name]: value });
+    } else {
+      setEditingNews({ id: Date.now().toString(), text: '', [name]: value });
     }
   };
 

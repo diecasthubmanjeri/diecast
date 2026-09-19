@@ -4,6 +4,7 @@ import { NewsModel } from '@/models/News';
 import { seedInitialDataIfNeeded } from '@/lib/seed';
 import { getCached, setCached, clearCache } from '@/lib/cache';
 import { checkAdminAuth } from '@/lib/adminAuth';
+import { saveFallbackNews } from '@/lib/fallbackStorage';
 
 const DEFAULT_NEWS = [
   { id: '1', text: '🚨 Big Sale: Up to 50% off on all 1/18 scale models!' },
@@ -51,14 +52,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized. Admin access required.' }, { status: 401 });
     }
 
-    const db = await connectDB();
-    if (!db) {
-      return NextResponse.json({ success: false, error: 'Database not connected' }, { status: 503 });
-    }
-
     const body = await req.json();
     if (!body.text || typeof body.text !== 'string' || !body.text.trim()) {
       return NextResponse.json({ success: false, error: 'News text is required' }, { status: 400 });
+    }
+
+    const db = await connectDB();
+    if (!db) {
+      const saved = saveFallbackNews(body);
+      return NextResponse.json({ success: true, data: saved }, { status: 201 });
     }
 
     const id = body.id || Date.now().toString();

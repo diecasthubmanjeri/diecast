@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb';
 import { NewsModel } from '@/models/News';
 import { checkAdminAuth } from '@/lib/adminAuth';
 import { clearCache } from '@/lib/cache';
+import { saveFallbackNews, deleteFallbackNews } from '@/lib/fallbackStorage';
 
 export async function PUT(
   req: NextRequest,
@@ -14,14 +15,15 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const db = await connectDB();
-    if (!db) {
-      return NextResponse.json({ success: false, error: 'Database not connected' }, { status: 503 });
-    }
-
     const body = await req.json();
     if (!body.text || typeof body.text !== 'string' || !body.text.trim()) {
       return NextResponse.json({ success: false, error: 'News text is required' }, { status: 400 });
+    }
+
+    const db = await connectDB();
+    if (!db) {
+      const saved = saveFallbackNews({ id, text: body.text.trim() });
+      return NextResponse.json({ success: true, data: saved });
     }
 
     const updated = await NewsModel.findOneAndUpdate(
@@ -55,7 +57,11 @@ export async function DELETE(
     const { id } = await params;
     const db = await connectDB();
     if (!db) {
-      return NextResponse.json({ success: false, error: 'Database not connected' }, { status: 503 });
+      const deleted = deleteFallbackNews(id);
+      if (!deleted) {
+        return NextResponse.json({ success: false, error: 'News item not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, message: 'News item deleted successfully' });
     }
 
     const deleted = await NewsModel.findOneAndDelete({ id });

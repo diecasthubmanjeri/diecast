@@ -62,18 +62,11 @@ export default function Home() {
   const featuredProducts = regularProducts.length > 0 ? regularProducts : products;
   const newArrivalsProducts = regularProducts.length > 0 ? regularProducts : products;
 
-  // Dynamically include any scales and brands present in products
+  // Dynamically include any scales present in products
   const productScales = products.map(p => p.scale).filter(Boolean);
   const allScales = Array.from(new Set([...localScales, ...productScales]));
 
-  const brandMap = new Map<string, Brand>();
-  localBrands.forEach(b => brandMap.set(b.name.toLowerCase(), b));
-  products.forEach(p => {
-    if (p.brand && !brandMap.has(p.brand.toLowerCase())) {
-      brandMap.set(p.brand.toLowerCase(), { name: p.brand, logo: '' });
-    }
-  });
-  const allBrands = Array.from(brandMap.values());
+  const allBrands = localBrands;
 
   return (
     <div className={styles.main}>
