@@ -538,9 +538,9 @@ export default function AdminDashboard() {
       id: Date.now().toString(),
       name: '',
       slug: `product-${Date.now()}`,
-      brand: localBrands.length > 0 ? localBrands[0].name : '',
-      scale: localScales.length > 0 ? localScales[0] : '',
-      category: localCategories.length > 0 ? localCategories[0].name : '',
+      brand: '',
+      scale: '',
+      category: '',
       price: 0,
       stock: 0,
       rating: 0,
@@ -1538,20 +1538,23 @@ export default function AdminDashboard() {
                   </>
                 )}
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Brand</label>
+                  <label className={styles.label}>Brand (Optional)</label>
                   <select name="brand" className={styles.select} value={editingProduct.brand} onChange={handleProductChange}>
+                    <option value="">Select Brand (Optional)</option>
                     {localBrands.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
                   </select>
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Scale</label>
+                  <label className={styles.label}>Scale (Optional)</label>
                   <select name="scale" className={styles.select} value={editingProduct.scale} onChange={handleProductChange}>
+                    <option value="">Select Scale (Optional)</option>
                     {localScales.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Category</label>
+                  <label className={styles.label}>Category (Optional)</label>
                   <select name="category" className={styles.select} value={editingProduct.category} onChange={handleProductChange}>
+                    <option value="">Select Category (Optional)</option>
                     {localCategories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
