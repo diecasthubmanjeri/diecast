@@ -10,7 +10,7 @@ export async function GET() {
     const cached = getCached<any>(cacheKey);
     if (cached) {
       return NextResponse.json(cached, {
-        headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' },
+        headers: { 'Cache-Control': 'no-store, max-age=0' },
       });
     }
 
@@ -20,7 +20,7 @@ export async function GET() {
       const resp = { success: true, data: offers, source: 'fallback' };
       setCached(cacheKey, resp, 20);
       return NextResponse.json(resp, {
-        headers: { 'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=60' },
+        headers: { 'Cache-Control': 'no-store, max-age=0' },
       });
     }
 
@@ -31,7 +31,7 @@ export async function GET() {
     const resp = { success: true, data: offers };
     setCached(cacheKey, resp, 30);
     return NextResponse.json(resp, {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' },
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error fetching offers';

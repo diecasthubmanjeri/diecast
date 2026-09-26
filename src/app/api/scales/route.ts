@@ -12,7 +12,7 @@ export async function GET() {
     const cached = getCached<any>(cacheKey);
     if (cached) {
       return NextResponse.json(cached, {
-        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+        headers: { 'Cache-Control': 'no-store, max-age=0' },
       });
     }
 
@@ -21,7 +21,7 @@ export async function GET() {
       const resp = { success: true, data: defaultScales };
       setCached(cacheKey, resp, 60);
       return NextResponse.json(resp, {
-        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+        headers: { 'Cache-Control': 'no-store, max-age=0' },
       });
     }
 
@@ -30,7 +30,7 @@ export async function GET() {
     const resp = { success: true, data: scales.map((s) => s.name) };
     setCached(cacheKey, resp, 60);
     return NextResponse.json(resp, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error fetching scales';

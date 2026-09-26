@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       if (cachedData) {
         return NextResponse.json(cachedData, {
           headers: {
-            'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=60',
+            'Cache-Control': 'no-store, max-age=0',
           },
         });
       }
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       const resp = { success: true, count: fallbackList.length, data: fallbackList, source: 'fallback' };
       if (!isAdmin) setCached(cacheKey, resp, 15);
       return NextResponse.json(resp, {
-        headers: { 'Cache-Control': isAdmin ? 'no-store, max-age=0' : 'public, s-maxage=15, stale-while-revalidate=30' },
+        headers: { 'Cache-Control': 'no-store, max-age=0' },
       });
     }
 
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(responsePayload, {
       headers: {
-        'Cache-Control': isAdmin ? 'no-store, max-age=0' : 'public, s-maxage=30, stale-while-revalidate=120',
+        'Cache-Control': 'no-store, max-age=0',
       },
     });
   } catch (error: unknown) {
