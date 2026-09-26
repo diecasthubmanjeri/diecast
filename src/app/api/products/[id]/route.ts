@@ -134,7 +134,7 @@ export async function DELETE(
     const result = await ProductModel.deleteMany(query);
 
     if (!result || result.deletedCount === 0) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ success: true, message: 'Product already deleted', count: 0 });
     }
 
     clearCache('products_');

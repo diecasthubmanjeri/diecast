@@ -20,14 +20,18 @@ export async function GET(req: NextRequest) {
     const preorder = searchParams.get('preorder');
     const inStock = searchParams.get('inStock');
 
+    const isAdmin = checkAdminAuth(req);
     const cacheKey = `products_${req.url}`;
-    const cachedData = getCached<any>(cacheKey);
-    if (cachedData) {
-      return NextResponse.json(cachedData, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=60',
-        },
-      });
+    
+    if (!isAdmin) {
+      const cachedData = getCached<any>(cacheKey);
+      if (cachedData) {
+        return NextResponse.json(cachedData, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=60',
+          },
+        });
+      }
     }
 
     const db = await connectDB();
@@ -35,9 +39,9 @@ export async function GET(req: NextRequest) {
       // Fallback mode if DB is not connected
       const fallbackList = getFallbackProducts({ category, brand, scale, q, preorder, inStock });
       const resp = { success: true, count: fallbackList.length, data: fallbackList, source: 'fallback' };
-      setCached(cacheKey, resp, 15);
+      if (!isAdmin) setCached(cacheKey, resp, 15);
       return NextResponse.json(resp, {
-        headers: { 'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30' },
+        headers: { 'Cache-Control': isAdmin ? 'no-store, max-age=0' : 'public, s-maxage=15, stale-while-revalidate=30' },
       });
     }
 
@@ -88,11 +92,11 @@ export async function GET(req: NextRequest) {
     }
 
     const responsePayload = { success: true, count: products.length, data: products };
-    setCached(cacheKey, responsePayload, 30);
+    if (!isAdmin) setCached(cacheKey, responsePayload, 30);
 
     return NextResponse.json(responsePayload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        'Cache-Control': isAdmin ? 'no-store, max-age=0' : 'public, s-maxage=30, stale-while-revalidate=120',
       },
     });
   } catch (error: unknown) {
