@@ -24,6 +24,20 @@ export default function Home() {
 
     async function loadData() {
       try {
+        const cached = localStorage.getItem('diecasthub_home_data');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (isSubscribed) {
+            if (parsed.products) setProducts(parsed.products);
+            if (parsed.brands) setLocalBrands(parsed.brands);
+            if (parsed.categories) setLocalCategories(parsed.categories);
+            if (parsed.scales) setLocalScales(parsed.scales);
+            setLoading(false);
+          }
+        }
+      } catch (e) {}
+
+      try {
         const [prods, brs, cats, scs] = await Promise.all([
           apiGetProducts(),
           apiGetBrands(),
@@ -36,6 +50,15 @@ export default function Home() {
           if (brs && brs.length > 0) setLocalBrands(brs);
           if (cats && cats.length > 0) setLocalCategories(cats);
           if (scs && scs.length > 0) setLocalScales(scs);
+          
+          if (prods && prods.length > 0) {
+             localStorage.setItem('diecasthub_home_data', JSON.stringify({
+               products: prods,
+               brands: brs,
+               categories: cats,
+               scales: scs
+             }));
+          }
         }
       } catch (err) {
         console.error('Failed to load home page data', err);
