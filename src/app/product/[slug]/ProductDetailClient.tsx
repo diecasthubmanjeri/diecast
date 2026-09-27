@@ -342,18 +342,26 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             <div className={styles.specifications}>
               <h2 className={styles.sectionTitle}>Features:</h2>
               <ul className={styles.specList}>
-                <li>
-                  <strong>Brand:</strong> {product.brand}
-                </li>
-                <li>
-                  <strong>Model:</strong> {product.model}
-                </li>
-                <li>
-                  <strong>Scale:</strong> {product.scale}
-                </li>
-                <li>
-                  <strong>Category:</strong> {product.category}
-                </li>
+                {product.brand && product.brand.toLowerCase() !== 'none' && (
+                  <li>
+                    <strong>Brand:</strong> {product.brand}
+                  </li>
+                )}
+                {product.model && product.model.toLowerCase() !== 'none' && (
+                  <li>
+                    <strong>Model:</strong> {product.model}
+                  </li>
+                )}
+                {product.scale && product.scale.toLowerCase() !== 'none' && (
+                  <li>
+                    <strong>Scale:</strong> {product.scale}
+                  </li>
+                )}
+                {product.category && product.category.toLowerCase() !== 'none' && (
+                  <li>
+                    <strong>Category:</strong> {product.category}
+                  </li>
+                )}
                 {availableColors.length > 0 && (
                   <li>
                     <strong>Color:</strong> {availableColors.join(', ')}

@@ -86,8 +86,8 @@ export default function ProductCard({ product, hideActions }: ProductCardProps) 
       
       <div className={styles.content}>
         <div className={styles.meta}>
-          <span className={styles.brand}>{product.brand}</span>
-          <span className={styles.scale}>{product.scale}</span>
+          {product.brand && product.brand.toLowerCase() !== 'none' && <span className={styles.brand}>{product.brand}</span>}
+          {product.scale && product.scale.toLowerCase() !== 'none' && <span className={styles.scale}>{product.scale}</span>}
         </div>
         
         <Link href={`/product/${product.slug}`} className={styles.title}>
