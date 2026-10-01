@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/mongodb';
 import { OrderModel } from '@/models/Order';
 import { ReservationModel } from '@/models/Reservation';
 import { ProductModel } from '@/models/Product';
+import { getFallbackOrders, saveFallbackOrder, removeFallbackReservation, getFallbackProducts, saveFallbackProduct } from '@/lib/fallbackStorage';
 
 export async function POST(req: NextRequest) {
   try {
@@ -67,6 +68,31 @@ export async function POST(req: NextRequest) {
               console.warn('[Reservation Delete Warning]:', delErr);
             }
             console.log(`[Webhook] Order ${order.id} marked as Paid via webhook and stock updated.`);
+          }
+        } else {
+          // Fallback logic
+          const fallbackOrders = getFallbackOrders();
+          const order = fallbackOrders.find(o => o.razorpayOrderId === String(razorpayOrderId));
+          
+          if (order && order.paymentStatus === 'Pending') {
+             order.paymentStatus = 'Paid';
+             if (razorpayPaymentId) {
+               order.razorpayPaymentId = String(razorpayPaymentId);
+             }
+             saveFallbackOrder(order);
+
+             // Deduct stock
+             const fallbackProducts = getFallbackProducts();
+             for (const item of order.items) {
+               const product = fallbackProducts.find(p => p.id === item.id);
+               if (product && !product.isPreorder && typeof product.stock === 'number') {
+                 product.stock = Math.max(0, product.stock - item.quantity);
+                 saveFallbackProduct(product);
+               }
+             }
+
+             removeFallbackReservation(String(razorpayOrderId));
+             console.log(`[Webhook] Fallback Order ${order.id} marked as Paid via webhook and stock updated.`);
           }
         }
       }
