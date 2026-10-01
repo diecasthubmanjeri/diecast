@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { OfferModel } from '@/models/Offer';

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import mongoose from 'mongoose';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 export const revalidate = 0;
 
 export async function HEAD() {
