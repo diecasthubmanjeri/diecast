@@ -13,9 +13,9 @@ function CatalogContent() {
   const router = useRouter();
   const pathname = usePathname();
   const [products, setProducts] = useState<Product[]>([]);
-  const [localBrands, setLocalBrands] = useState<Brand[]>(defaultBrands);
-  const [localCategories, setLocalCategories] = useState<Category[]>(defaultCategories);
-  const [localScales, setLocalScales] = useState<string[]>(defaultScales);
+  const [localBrands, setLocalBrands] = useState<Brand[]>([]);
+  const [localCategories, setLocalCategories] = useState<Category[]>([]);
+  const [localScales, setLocalScales] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [inStock, setInStock] = useState(false);
