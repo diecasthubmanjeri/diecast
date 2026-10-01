@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { OfferModel } from '@/models/Offer';
@@ -39,3 +40,4 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Failed to load offers' }, { status: 500 });
   }
 }
+

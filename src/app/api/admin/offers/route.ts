@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
@@ -177,3 +178,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to delete offer.' }, { status: 500 });
   }
 }
+

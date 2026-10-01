@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { ProductModel } from '@/models/Product';
@@ -229,3 +230,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to create or update product' }, { status: 500 });
   }
 }
+

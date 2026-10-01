@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { CategoryModel } from '@/models/Category';
@@ -80,3 +81,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to create category' }, { status: 500 });
   }
 }
+

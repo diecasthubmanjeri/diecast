@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { CartModel } from '@/models/Cart';
@@ -399,4 +400,5 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to clear cart' }, { status: 500 });
   }
 }
+
 
