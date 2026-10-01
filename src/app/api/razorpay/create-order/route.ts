@@ -4,17 +4,21 @@ import { connectDB } from '@/lib/mongodb';
 import { ProductModel } from '@/models/Product';
 import { OfferModel } from '@/models/Offer';
 import { ReservationModel } from '@/models/Reservation';
+import { OrderModel } from '@/models/Order';
+import { getOrCreateSessionId } from '@/lib/session';
 import {
   getFallbackProducts,
   getFallbackOffers,
   getActiveFallbackReservations,
   saveFallbackReservation,
+  saveFallbackOrder,
 } from '@/lib/fallbackStorage';
 
 export async function POST(req: NextRequest) {
   try {
+    const { sessionId } = getOrCreateSessionId(req);
     const body = await req.json();
-    const { items, currency = 'INR', receipt, notes } = body;
+    const { items, currency = 'INR', receipt, notes, customerName, customerEmail, customerPhone, address, city, state, pinCode, shippingPartner } = body;
 
     let payableTotal = 0;
 
@@ -151,6 +155,72 @@ export async function POST(req: NextRequest) {
         }
       } catch (reserveErr) {
         console.warn('[Reservation Hold Warning]:', reserveErr);
+      }
+      
+      try {
+        const db = await connectDB();
+        const orderIdVal = 'ORD' + Date.now().toString();
+        const validatedItems = items.map((i: any) => ({
+           id: i.id,
+           name: i.name,
+           price: i.price,
+           quantity: i.quantity,
+           image: i.image,
+           scale: i.scale,
+           color: i.color
+        }));
+
+        if (db) {
+          await OrderModel.create({
+            id: orderIdVal,
+            date: new Date(),
+            status: 'Pending',
+            customerName: customerName || notes?.customerName || 'Unknown',
+            customerEmail: customerEmail || notes?.customerEmail || 'Unknown',
+            customerPhone: customerPhone || notes?.customerPhone || 'Unknown',
+            address: address || 'Pending',
+            city: city || 'Pending',
+            state: state || 'Pending',
+            pinCode: pinCode || '000000',
+            shippingPartner: shippingPartner || 'Indian Post (Door-to-Door Delivery)',
+            items: validatedItems,
+            subtotal: payableTotal, // Approximate for pending
+            discountAmount: 0,
+            offerApplied: '',
+            totalAmount: payableTotal,
+            sessionId,
+            paymentMethod: 'Razorpay',
+            paymentStatus: 'Pending',
+            razorpayOrderId: order.id,
+          });
+        } else {
+          saveFallbackOrder({
+            id: orderIdVal,
+            date: new Date().toISOString(),
+            status: 'Pending',
+            customerName: customerName || notes?.customerName || 'Unknown',
+            customerEmail: customerEmail || notes?.customerEmail || 'Unknown',
+            customerPhone: customerPhone || notes?.customerPhone || 'Unknown',
+            address: address || 'Pending',
+            city: city || 'Pending',
+            state: state || 'Pending',
+            pinCode: pinCode || '000000',
+            shippingPartner: shippingPartner || 'Indian Post (Door-to-Door Delivery)',
+            items: validatedItems,
+            subtotal: payableTotal,
+            discountAmount: 0,
+            offerApplied: '',
+            totalAmount: payableTotal,
+            sessionId,
+            paymentMethod: 'Razorpay',
+            paymentStatus: 'Pending',
+            razorpayOrderId: order.id,
+            razorpayPaymentId: '',
+            razorpaySignature: '',
+          });
+        }
+      } catch (orderErr) {
+        console.warn('[Order Creation Warning]:', orderErr);
       }
     }
 

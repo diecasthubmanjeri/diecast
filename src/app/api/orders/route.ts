@@ -188,30 +188,46 @@ export async function POST(req: NextRequest) {
       const offerApplied = bestOffer ? bestOffer.title : '';
 
       const orderId = 'ORD' + Date.now().toString();
-      const newOrder = saveFallbackOrder({
-        id: orderId,
-        date: new Date().toISOString(),
-        status: 'Pending',
-        customerName: customerName.trim(),
-        customerEmail: customerEmail.trim().toLowerCase(),
-        customerPhone: customerPhone.trim(),
-        address: address.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        pinCode: pinCode.trim(),
-        shippingPartner: shippingPartner || 'Indian Post (Door-to-Door Delivery)',
-        items: validatedItems,
-        subtotal: calculatedSubtotal,
-        discountAmount,
-        offerApplied,
-        totalAmount: calculatedTotal,
-        sessionId,
-        paymentMethod,
-        paymentStatus,
-        razorpayOrderId: razorpayOrderId || '',
-        razorpayPaymentId: razorpayPaymentId || '',
-        razorpaySignature: razorpaySignature || '',
-      });
+      const existingFbPending = razorpayOrderId ? fallbackOrders.find(o => o.razorpayOrderId === String(razorpayOrderId) && o.paymentStatus === 'Pending') : null;
+      let newOrder;
+      
+      if (existingFbPending) {
+         existingFbPending.paymentStatus = 'Paid';
+         existingFbPending.razorpayPaymentId = razorpayPaymentId || '';
+         existingFbPending.razorpaySignature = razorpaySignature || '';
+         existingFbPending.items = validatedItems;
+         existingFbPending.subtotal = calculatedSubtotal;
+         existingFbPending.discountAmount = discountAmount;
+         existingFbPending.offerApplied = offerApplied;
+         existingFbPending.totalAmount = calculatedTotal;
+         newOrder = existingFbPending;
+         // Note: in a real implementation, we should save the fallback storage here
+      } else {
+        newOrder = saveFallbackOrder({
+          id: orderId,
+          date: new Date().toISOString(),
+          status: 'Pending',
+          customerName: customerName.trim(),
+          customerEmail: customerEmail.trim().toLowerCase(),
+          customerPhone: customerPhone.trim(),
+          address: address.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          pinCode: pinCode.trim(),
+          shippingPartner: shippingPartner || 'Indian Post (Door-to-Door Delivery)',
+          items: validatedItems,
+          subtotal: calculatedSubtotal,
+          discountAmount,
+          offerApplied,
+          totalAmount: calculatedTotal,
+          sessionId,
+          paymentMethod,
+          paymentStatus,
+          razorpayOrderId: razorpayOrderId || '',
+          razorpayPaymentId: razorpayPaymentId || '',
+          razorpaySignature: razorpaySignature || '',
+        });
+      }
 
       if (razorpayOrderId) {
         removeFallbackReservation(String(razorpayOrderId));
@@ -317,31 +333,47 @@ export async function POST(req: NextRequest) {
     const offerApplied = bestOffer ? bestOffer.title : '';
 
     // 3. Create and Save Order
-    const orderId = 'ORD' + Date.now().toString();
-    const newOrder = await OrderModel.create({
-      id: orderId,
-      date: new Date(),
-      status: 'Pending',
-      customerName: customerName.trim(),
-      customerEmail: customerEmail.trim().toLowerCase(),
-      customerPhone: customerPhone.trim(),
-      address: address.trim(),
-      city: city.trim(),
-      state: state.trim(),
-      pinCode: pinCode.trim(),
-      shippingPartner: shippingPartner || 'Indian Post (Door-to-Door Delivery)',
-      items: validatedItems,
-      subtotal: calculatedSubtotal,
-      discountAmount,
-      offerApplied,
-      totalAmount: calculatedTotal,
-      sessionId,
-      paymentMethod: paymentMethod || 'Razorpay',
-      paymentStatus: paymentStatus || 'Paid',
-      razorpayOrderId: razorpayOrderId || '',
-      razorpayPaymentId: razorpayPaymentId || '',
-      razorpaySignature: razorpaySignature || '',
-    });
+    let newOrder;
+    const existingPendingOrder = razorpayOrderId ? await OrderModel.findOne({ razorpayOrderId: String(razorpayOrderId), paymentStatus: 'Pending' }) : null;
+
+    if (existingPendingOrder) {
+      existingPendingOrder.paymentStatus = paymentStatus || 'Paid';
+      existingPendingOrder.razorpayPaymentId = razorpayPaymentId || '';
+      existingPendingOrder.razorpaySignature = razorpaySignature || '';
+      existingPendingOrder.items = validatedItems;
+      existingPendingOrder.subtotal = calculatedSubtotal;
+      existingPendingOrder.discountAmount = discountAmount;
+      existingPendingOrder.offerApplied = offerApplied;
+      existingPendingOrder.totalAmount = calculatedTotal;
+      await existingPendingOrder.save();
+      newOrder = existingPendingOrder;
+    } else {
+      const orderId = 'ORD' + Date.now().toString();
+      newOrder = await OrderModel.create({
+        id: orderId,
+        date: new Date(),
+        status: 'Pending',
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim().toLowerCase(),
+        customerPhone: customerPhone.trim(),
+        address: address.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        pinCode: pinCode.trim(),
+        shippingPartner: shippingPartner || 'Indian Post (Door-to-Door Delivery)',
+        items: validatedItems,
+        subtotal: calculatedSubtotal,
+        discountAmount,
+        offerApplied,
+        totalAmount: calculatedTotal,
+        sessionId,
+        paymentMethod: paymentMethod || 'Razorpay',
+        paymentStatus: paymentStatus || 'Paid',
+        razorpayOrderId: razorpayOrderId || '',
+        razorpayPaymentId: razorpayPaymentId || '',
+        razorpaySignature: razorpaySignature || '',
+      });
+    }
 
     // 4. Clear cart if checked out from cart
     if (clearCartAfterOrder) {

@@ -228,6 +228,16 @@ export default function CheckoutModal({ isOpen, onClose, product, items, quantit
             customerEmail,
             itemsCount: checkoutItems.length,
           },
+          // Send full address details so the server can create a Pending order
+          customerName,
+          customerEmail,
+          customerPhone,
+          address: addressStr,
+          city,
+          state,
+          pinCode,
+          shippingPartner,
+          clearCartAfterOrder: isCartCheckout,
         }),
       });
 
