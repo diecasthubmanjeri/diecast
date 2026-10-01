@@ -23,13 +23,14 @@ export async function GET(req: NextRequest) {
     // to their verified session. Arbitrary phone/email querying is restricted to the admin portal.
     const db = await connectDB();
     if (!db) {
-      const orders = getFallbackOrders({ sessionId });
+      let orders = getFallbackOrders({ sessionId });
+      orders = orders.filter(o => o.paymentStatus !== 'Pending');
       const res = NextResponse.json({ success: true, data: orders, source: 'fallback' });
       if (isNew) attachSessionCookie(res, sessionId);
       return res;
     }
 
-    const orders = await OrderModel.find({ sessionId }).sort({ createdAt: -1 }).lean();
+    const orders = await OrderModel.find({ sessionId, paymentStatus: { $ne: 'Pending' } }).sort({ createdAt: -1 }).lean();
 
     const res = NextResponse.json({ success: true, data: orders });
     if (isNew) attachSessionCookie(res, sessionId);

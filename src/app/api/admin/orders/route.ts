@@ -15,11 +15,14 @@ export async function GET(req: NextRequest) {
 
     const db = await connectDB();
     if (!db) {
-      const orders = getFallbackOrders({ status: status || undefined });
+      let orders = getFallbackOrders({ status: status || undefined });
+      orders = orders.filter(o => o.paymentStatus !== 'Pending');
       return NextResponse.json({ success: true, count: orders.length, data: orders, source: 'fallback' });
     }
 
-    const filter: Record<string, any> = {};
+    const filter: Record<string, any> = {
+      paymentStatus: { $ne: 'Pending' }
+    };
     if (status) {
       filter.status = status;
     }
